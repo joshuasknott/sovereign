@@ -3199,10 +3199,7 @@
     {
       "t": "span",
       "i": 2,
-      "c": [
-        " ",
-        "no computador que abriu esta página"
-      ]
+      "c": [" ", "no computador que abriu esta página"]
     }
   ],
   "b2d53b4d1d48fbef": [
@@ -3214,10 +3211,7 @@
     {
       "t": "span",
       "i": 2,
-      "c": [
-        " ",
-        "· quem executar recebe este acesso"
-      ]
+      "c": [" ", "· quem executar recebe este acesso"]
     }
   ],
   "c54cc9c75db9dc58": "Aprove apenas um login que você acabou de iniciar.",
@@ -13087,7 +13081,6 @@
   "9f1f41a2eda6c459": "Finances",
   "55ebe80676a3bed3": "Support Tickets",
   "9592606af8afbc5f": "Requested by:",
-  "78e09496e35f13ec": "No provider instances reported yet. Connect your AI subscriptions in Settings.",
   "fecb663b2bce2440": "AI Agent (Undisclosed)",
   "e35e4e9585dea5c5": "Opportunity title",
   "f6b6439781aa8631": "Security testing",
@@ -13208,7 +13201,6 @@
   "2cc36e57371bb486": "Action category",
   "fecb85d3f3674eac": "Welcome to Sovereign",
   "8e0d128fea130a26": "Halted: all autonomous external execution and provider routing are stopped.",
-  "70c5fc78081e5285": "Provider Resource Pool",
   "cef47497b78ec4e4": "Confirmed Expenditure",
   "a811cab733eae144": "Open Sovereign Governance & Emergency Stop",
   "dfe5e43c2e37466b": "Webhook or API URL (optional)",
@@ -13366,7 +13358,6 @@
   "0567753771af3c5f": "Human",
   "8dc827a7ed1f596b": "Policy name",
   "f5e019d120682c07": "Programmes & Findings",
-  "5b27ebf813e4633e": "Provider Resource Pool",
   "9962a2b3bc783cca": "Global monthly discretionary spend cap",
   "c8faa4f43fe35690": "Single cap: {single} · Monthly cap: {monthly}",
   "50ada690daf37dca": "Example: Pausing outbound activity to review budget and approvals",
@@ -13384,7 +13375,6 @@
   "2a1419da20c2bb27": "Queued",
   "7be5f150fec3c53d": "Refresh venture",
   "f7074f6203761ab6": "Pending Approvals",
-  "c86cbdf8889a91b9": "Configure",
   "f8de68baab6db61b": "Sovereign navigation",
   "d557e794fdb87f4c": "Review Scope Lock",
   "754441db75c8ed59": "Channel",
@@ -13410,7 +13400,6 @@
   "a75356ca32a793d1": "Simulated Fixture",
   "1e6aba64732b09a3": "Refund",
   "6350ecff851c14e3": "Programme name",
-  "6cdc3f32f802d98b": "API",
   "65535fb662f12c37": "Invoices",
   "de830d7bc85b732d": "Proposal title (e.g. Website Rebuild)",
   "876853515744126d": "Connect payment, email, telephony, hosting, or commerce providers. Credentials are stored encrypted on the server and never returned in plaintext.",
