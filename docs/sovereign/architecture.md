@@ -15,7 +15,7 @@ flowchart TD
   Drivers["apps/server/src/sovereign/integrations/\nPayments · Email · Voice · GitHub · Deploy · WebResearch"]
   Pool["apps/server/src/provider/\nProviderPoolRouter · ProviderAvailabilityLedger · billingClassifier"]
   Core["T3 Code Core Runtime\nOrchestration v2 · Providers & ACP · Git Worktrees · Terminals · Auth"]
-  DB["SQLite statev2.sqlite\nMigrations 001..116 (Core) + Migration 117 (21 Sovereign tables)"]
+  DB["SQLite statev2.sqlite\nCore migrations + independent Sovereign migrations"]
 
   UI --> CR
   CR --> Contracts
@@ -44,9 +44,9 @@ Sovereign preserves the internal compatibility boundaries of T3 Code so client/s
   - Provider pool routing: [`apps/server/src/provider/ProviderPoolRouter.ts`](../../apps/server/src/provider/ProviderPoolRouter.ts), [`ProviderAvailabilityLedger.ts`](../../apps/server/src/provider/ProviderAvailabilityLedger.ts), [`billingClassifier.ts`](../../apps/server/src/provider/billingClassifier.ts)
   - Web UI: [`apps/web/src/sovereign/`](../../apps/web/src/sovereign/) and [`apps/web/src/state/sovereign.ts`](../../apps/web/src/state/sovereign.ts)
 
-## 2. Persistence: SQLite Migration 117
+## 2. Persistence: The Sovereign schema migration
 
-[`apps/server/src/persistence/Migrations/117_sovereign_commercial_os.ts`](../../apps/server/src/persistence/Migrations/117_sovereign_commercial_os.ts) adds 21 normalized tables to `statev2.sqlite` (registered in [`apps/server/src/persistence/Migrations.ts`](../../apps/server/src/persistence/Migrations.ts)):
+[`apps/server/src/sovereign/migrations/001_CommercialOS.ts`](../../apps/server/src/sovereign/migrations/001_CommercialOS.ts) adds 21 normalized tables to `statev2.sqlite` (registered in [`apps/server/src/persistence/Migrations.ts`](../../apps/server/src/persistence/Migrations.ts)):
 
 | Group                   | Tables                                                                                                                                                                 | Key invariants                                                                                                                                                                                                                                                      |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,7 +56,7 @@ Sovereign preserves the internal compatibility boundaries of T3 Code so client/s
 | Finance                 | `sovereign_invoices`, `sovereign_payment_links`, `sovereign_ledger_entries`                                                                                            | `sovereign_ledger_entries` is append-only with unique `external_ref` deduplication, integer minor units, GBP conversion snapshot, and explicit `verification_state` (`verified`, `pending_reconciliation`, `simulated_fixture`).                                    |
 | Integrations & Webhooks | `sovereign_integrations`, `sovereign_webhook_replay_keys`                                                                                                              | Never stores plaintext secrets (only `has_secret` + optional `secret_reference_json`); primary key `(integration_id, replay_key)` prevents webhook replay double-booking.                                                                                           |
 
-Zero fake ventures, tasks, or financial totals are seeded by Migration 117.
+The schema starts with an empty ledger and no ventures or tasks. Sovereign records its migration in `sovereign_sql_migrations`. Existing installations that used upstream migration number 117 keep their commercial tables and receive the upstream workflow-mail change during upgrade.
 
 ## 3. Server Effect Services
 

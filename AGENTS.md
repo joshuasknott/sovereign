@@ -10,7 +10,7 @@ Sovereign is an open-source, provider-agnostic Commercial Operating System built
 2. **Honesty over fake metrics.** Never fabricate provider quota percentages, simulated revenue in verified financial totals, or fake "connected" integration states without real verification.
 3. **Performance without compromise.** Avoid sending unbounded payloads over WebSockets, continuously repainting CSS animations, or unnecessary re-renders.
 4. **Remote ready & multi-surface.** Support web, desktop (Electron), and mobile (React Native) via shared logic in `packages/client-runtime` and contracts in `packages/contracts`.
-5. **Modular separation from upstream core.** Keep Sovereign commercial domain code inside `packages/contracts/src/sovereign/`, `packages/client-runtime/src/sovereign/`, `apps/server/src/sovereign/`, `apps/web/src/sovereign/`, and Sovereign pool files in `apps/server/src/provider/`. Preserve internal T3 Code runtime compatibility (`@t3tools/*` workspace scopes, `statev2.sqlite` Migrations `001..116`, `WS_METHODS`, `t3` CLI compatibility) so upstream maintenance stays clean.
+5. **Modular separation from upstream core.** Keep Sovereign commercial domain code inside `packages/contracts/src/sovereign/`, `packages/client-runtime/src/sovereign/`, `apps/server/src/sovereign/`, `apps/web/src/sovereign/`, and Sovereign pool files in `apps/server/src/provider/`. Preserve internal T3 Code runtime compatibility (`@t3tools/*` workspace scopes, `statev2.sqlite` core migrations, `WS_METHODS`, `t3` CLI compatibility) so upstream maintenance stays clean.
 
 ## Terminology
 
@@ -77,7 +77,7 @@ See [00_development.md](docs/operations/00_development.md) and [docs/sovereign/q
 
 - `packages/contracts/src/sovereign/` — Sovereign Effect/Schema wire contracts, 36 `sovereign.*` RPCs, and auth scopes (`@t3tools/contracts/sovereign`).
 - `packages/client-runtime/src/sovereign/` — Shared Sovereign query atoms, permission-gated commands, and Hermes-safe formatters.
-- `apps/server/src/sovereign/` — Sovereign SQLite store (Migration 117), Effect services (`Governance`, `Ledger`, `Sales`, `Integration`, `Orchestrator`), HTTP webhook routes, WS handlers, 13 built-in integration drivers (`integrations/`), and 7+ venture workflow engines (`ventures/`).
+- `apps/server/src/sovereign/` — Sovereign SQLite store (the Sovereign schema migration), Effect services (`Governance`, `Ledger`, `Sales`, `Integration`, `Orchestrator`), HTTP webhook routes, WS handlers, 13 built-in integration drivers (`integrations/`), and 7+ venture workflow engines (`ventures/`).
 - `apps/server/src/provider/` — Provider adapters plus Sovereign `billingClassifier.ts`, `ProviderAvailabilityLedger.ts`, and `ProviderPoolRouter.ts`.
 - `apps/server/src/mcp/toolkits/sovereign.ts` — Least-privilege 6-tool Sovereign MCP toolkit.
 - `apps/web/src/sovereign/` — 3-area Sovereign web UI (Overview, Venture Workspaces, Settings panels) and Obsidian/Alabaster Meridian atmosphere.

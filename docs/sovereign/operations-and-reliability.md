@@ -76,7 +76,7 @@ vp test run packages/client-runtime/src/sovereign/sovereign.test.ts
 # Provider pool billing classifier, router, cooldown & reassignment
 vp test run apps/server/src/provider/billingClassifier.test.ts apps/server/src/provider/ProviderPoolRouter.test.ts apps/server/src/orchestration-v2/UsageLimitRecoveryWorker.test.ts
 
-# Sovereign server core (Migration 117, governance, ledger, sales, orchestrator, webhooks, MCP)
+# Sovereign server core (the Sovereign schema migration, governance, ledger, sales, orchestrator, webhooks, MCP)
 vp test run apps/server/src/sovereign/SovereignCore.test.ts
 
 # Integration drivers (Stripe, Paddle, Lemon Squeezy, Resend, SMTP, Voice, GitHub, Deploy, SSRF)

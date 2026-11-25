@@ -64,7 +64,7 @@ $env:SOVEREIGN_HOME = "$HOME\.sovereign"
 vp run dev
 ```
 
-The dev runner starts the Sovereign Node/Effect server (SQLite `statev2.sqlite` with Migration 117) and the Vite web client on a single origin (default port `3773`, offset automatically if occupied). Look for the printed `pairingUrl:` in terminal output and open it in your browser. Opening the bare origin without the pairing URL will not authenticate a new browser session.
+The dev runner starts the Sovereign Node/Effect server (SQLite `statev2.sqlite` with the Sovereign schema migration) and the Vite web client on a single origin (default port `3773`, offset automatically if occupied). Look for the printed `pairingUrl:` in terminal output and open it in your browser. Opening the bare origin without the pairing URL will not authenticate a new browser session.
 
 ### Desktop app (Electron)
 
@@ -121,7 +121,7 @@ The Overview composer accepts an objective without a target or deadline. Use its
 
 ## 5. Next steps
 
-- [Architecture](./architecture.md) — Modular Sovereign layer, SQLite Migration 117, Effect services, WebSocket RPC, and MCP toolkit.
+- [Architecture](./architecture.md) — Modular Sovereign layer, the Sovereign schema migration, Effect services, WebSocket RPC, and MCP toolkit.
 - [Providers and Resource Pool](./providers-and-pool.md) — Billing classification, honest quota reporting, never-silent-paid-fallback policy, and rate-limit failover.
 - [Ventures](./ventures.md) — Detailed workflows for all 7 initial ventures and dynamic custom venture creation.
 - [Integrations](./integrations.md) — Configuring Stripe, Paddle, Lemon Squeezy, Resend, SMTP, Vapi, Retell, ElevenLabs, Twilio, GitHub, Vercel, Cloudflare, Gumroad, and webhooks.

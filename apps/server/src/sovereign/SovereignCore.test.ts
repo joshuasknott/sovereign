@@ -181,7 +181,7 @@ describe("Sovereign Commercial OS Core", () => {
   );
 
   it.effect(
-    "runs Migration 117 cleanly with £0 initial totals, safe defaults, and SOVEREIGN_HOME alias",
+    "runs the Sovereign schema migration cleanly with £0 initial totals, safe defaults, and SOVEREIGN_HOME alias",
     () =>
       Effect.gen(function* () {
         const orchestrator = yield* SovereignOrchestratorService.SovereignOrchestratorService;

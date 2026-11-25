@@ -5,7 +5,7 @@ Sovereign is an independent, provider-agnostic Commercial Operating System built
 ## Sovereign Guides
 
 - [Quickstart](./sovereign/quickstart.md) — Install from source, configure `SOVEREIGN_HOME`, add AI subscriptions, and run your first venture objective
-- [Architecture](./sovereign/architecture.md) — Modular Sovereign layer, SQLite Migration 117, Effect services, WebSocket RPC, webhooks, MCP toolkit, and 3-area UI
+- [Architecture](./sovereign/architecture.md) — Modular Sovereign layer, the Sovereign schema migration, Effect services, WebSocket RPC, webhooks, MCP toolkit, and 3-area UI
 - [Providers & Resource Pool](./sovereign/providers-and-pool.md) — Supported drivers & ACP agents, billing classification, honest quota reporting, never-silent-paid-fallback, and cooldown failover
 - [Ventures](./sovereign/ventures.md) — All 7 initial ventures (Dev Bounties, Authorised Security Bounties, Web Agency, Voice AI, Paid Tasks, Digital Products, Micro-SaaS) plus dynamic custom ventures
 - [Integrations](./sovereign/integrations.md) — Payments, Email, Voice/Telephony, GitHub, Hosting/Storefronts, HMAC webhooks, sandbox mode, and credential isolation
