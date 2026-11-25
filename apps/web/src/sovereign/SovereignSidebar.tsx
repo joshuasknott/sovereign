@@ -4,6 +4,7 @@ import { Cpu, LayoutGrid, ListTree, Settings, Search, ArrowLeft } from "lucide-r
 import { useState } from "react";
 import { formatQuotaStatus } from "@t3tools/client-runtime/sovereign/format";
 import { openCommandPalette } from "../commandPaletteBus";
+import { useEnvironmentProviders } from "../state/environments";
 import { isElectron } from "../env";
 import { cn } from "../lib/utils";
 import {
@@ -37,13 +38,17 @@ export function SovereignSidebar({ routeReveal }: { readonly routeReveal: Sideba
   const { data } = useSovereignOverview(id, "sidebar");
   const path = useLocation({ select: (l) => l.pathname });
   const [showThreads, setShowThreads] = useState(false);
+  const providers = useEnvironmentProviders();
+  const authenticated = new Set(
+    (id ? providers.get(id) : undefined)
+      ?.filter((provider) => provider.auth.status === "authenticated")
+      .map((provider) => provider.instanceId),
+  );
   const subscriptions = data?.providerPool.members.filter(
-    (m) =>
-      m.enabled &&
-      m.billingClass === "subscription" &&
-      (m.healthStatus === "healthy" ||
-        m.healthStatus === "cooldown" ||
-        m.quotaAvailability === "exhausted"),
+    (member) =>
+      member.enabled &&
+      member.billingClass === "subscription" &&
+      authenticated.has(member.instanceId),
   );
   if (showThreads)
     return (

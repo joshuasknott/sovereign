@@ -24,6 +24,9 @@ export function SovereignVenturesList({
     environmentId,
     sovereignCommands.createVentureCommand,
   );
+  const projectThreads = threads.filter(
+    (thread) => thread.environmentId === environmentId && !thread.archivedAt,
+  );
   return (
     <section aria-labelledby="venture-heading">
       <div className="sv-ventures-heading">
@@ -46,14 +49,10 @@ export function SovereignVenturesList({
           const approval = overview.pendingApprovals.find((item) => item.ventureId === venture.id);
           const task = overview.activeTasks.find((item) => item.ventureId === venture.id);
           const objective = overview.activeObjectives.find((item) => item.ventureId === venture.id);
-          const thread = threads.find(
-            (item) =>
-              item.environmentId === environmentId &&
-              item.archivedAt == null &&
-              (item.id === task?.linkedThreadId ||
-                venture.linkedThreadIds.includes(item.id) ||
-                venture.linkedProjectIds.includes(item.projectId)),
-          );
+          const thread =
+            projectThreads.find((item) => item.id === task?.linkedThreadId) ??
+            projectThreads.find((item) => venture.linkedThreadIds.includes(item.id)) ??
+            projectThreads.find((item) => venture.linkedProjectIds.includes(item.projectId));
           const route = thread
             ? {
                 to: "/$environmentId/$threadId" as const,
