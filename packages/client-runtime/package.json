@@ -670,6 +670,18 @@
     "./pull-request-references": {
       "types": "./src/pullRequestReferences.ts",
       "default": "./src/pullRequestReferences.ts"
+    },
+    "./sovereign/atoms": {
+      "types": "./src/sovereign/atoms.ts",
+      "default": "./src/sovereign/atoms.ts"
+    },
+    "./sovereign/commands": {
+      "types": "./src/sovereign/commands.ts",
+      "default": "./src/sovereign/commands.ts"
+    },
+    "./sovereign/format": {
+      "types": "./src/sovereign/format.ts",
+      "default": "./src/sovereign/format.ts"
     }
   },
   "scripts": {

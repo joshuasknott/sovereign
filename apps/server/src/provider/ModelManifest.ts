@@ -25,8 +25,15 @@ import {
 } from "./providerCompatibility.ts";
 import * as ModelCatalog from "@t3tools/provider-core/server/ModelCatalog";
 
-const MODEL_MANIFEST_URL =
+const DEFAULT_MODEL_MANIFEST_URL =
   "https://raw.githubusercontent.com/pingdotgg/t3code/main/apps/server/src/provider/model-manifest.json";
+
+export function resolveModelManifestUrl(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): string {
+  const configured = (env.SOVEREIGN_MODEL_MANIFEST_URL ?? env.T3CODE_MODEL_MANIFEST_URL)?.trim();
+  return configured && configured.length > 0 ? configured : DEFAULT_MODEL_MANIFEST_URL;
+}
 
 const MANIFEST_TTL_MS = 60 * 60 * 1000;
 
@@ -254,7 +261,7 @@ export const make = Effect.gen(function* () {
     if (settings !== null && !settings.enableProviderUpdateChecks) return manifest;
 
     lastAttemptMs = now;
-    const fetched = yield* httpClient.get(MODEL_MANIFEST_URL).pipe(
+    const fetched = yield* httpClient.get(resolveModelManifestUrl()).pipe(
       Effect.flatMap(HttpClientResponse.filterStatusOk),
       Effect.flatMap((response) => response.json),
       Effect.flatMap((json) => decodeManifest(json)),

@@ -5,20 +5,12 @@ import {
   UserProfileView,
 } from "@clerk/expo/native-components";
 import { useNavigation } from "@react-navigation/native";
+import { useGT } from "gt-react-native";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { hasCloudPublicConfig } from "../cloud/publicConfig";
 import { T3ConnectProfilePage } from "../cloud/T3ConnectProfilePage";
-
-const USER_PROFILE_CUSTOM_PAGES = [
-  {
-    path: "t3-connect",
-    label: "T3 Connect",
-    icon: "globe",
-    content: <T3ConnectProfilePage />,
-  },
-] satisfies UserProfileCustomPage[];
 
 // Without cloud config the app has no entry point here and appLinking drops the deep link.
 export function SettingsAuthRouteScreen() {
@@ -26,9 +18,18 @@ export function SettingsAuthRouteScreen() {
 }
 
 function ConfiguredSettingsAuthRouteScreen() {
+  const gt = useGT();
   const { isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false });
   const navigation = useNavigation();
   const handleHostBack = () => navigation.goBack();
+  const userProfileCustomPages = [
+    {
+      path: "t3-connect",
+      label: gt("Sovereign Connect"),
+      icon: "globe",
+      content: <T3ConnectProfilePage />,
+    },
+  ] satisfies UserProfileCustomPage[];
   // Once signed in, stay on the profile view so signing out pops back instead of
   // flashing the sign-in form.
   const [hasBeenSignedIn, setHasBeenSignedIn] = useState(isSignedIn === true);
@@ -48,7 +49,7 @@ function ConfiguredSettingsAuthRouteScreen() {
       {isLoaded ? (
         hasBeenSignedIn ? (
           <UserProfileView
-            customPages={USER_PROFILE_CUSTOM_PAGES}
+            customPages={userProfileCustomPages}
             isDismissible={false}
             onHostBack={handleHostBack}
           />

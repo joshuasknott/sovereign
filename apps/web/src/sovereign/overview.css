@@ -1,0 +1,373 @@
+.sv-overview {
+  --sv-paper: #faf8f5;
+  --sv-surface: #fdfbf8;
+  --sv-ink: #20201e;
+  --sv-muted: #565451;
+  --sv-line: #ccc8c3;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--sv-ink);
+  background: var(--sv-paper);
+  container-type: inline-size;
+}
+.dark .sv-overview {
+  --sv-paper: #191918;
+  --sv-surface: #232322;
+  --sv-ink: #f7f6f2;
+  --sv-muted: #c6c4bf;
+  --sv-line: #484743;
+}
+.sv-topbar {
+  flex: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 6.5rem;
+  padding: 1rem var(--workspace-native-controls-inset, 0px) 1rem 0;
+}
+.sv-profit,
+.sv-composer {
+  background: var(--sv-surface);
+  border: 1px solid var(--sv-line);
+  box-shadow: 0 5px 13px -5px #24211e30;
+}
+.sv-profit {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  line-height: 1.3;
+  padding: 0.45rem 0.8rem 0.45rem 1.25rem;
+  border-radius: 1.3rem;
+}
+.sv-profit strong {
+  font-size: 1.15em;
+  font-variant-numeric: tabular-nums;
+}
+.sv-stop {
+  position: absolute;
+  inset-inline-end: max(1.5rem, var(--workspace-native-controls-inset, 0px));
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem;
+}
+.sv-topbar button,
+.sv-brand a {
+  -webkit-app-region: no-drag;
+}
+.sv-overview button:not(:disabled),
+.sv-overview summary,
+.sv-sidebar button {
+  cursor: pointer;
+}
+.sv-stop svg,
+.sv-ventures-heading svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+.sv-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.sv-projects {
+  max-width: 100rem;
+  margin: auto;
+  padding: clamp(1rem, 3.2vw, 3.1rem) clamp(1.25rem, 3.5vw, 3.6rem);
+}
+.sv-ventures-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.15rem;
+  border-bottom: 1px solid var(--sv-line);
+}
+.sv-ventures-heading h1 {
+  font-size: clamp(1.65rem, 2.25vw, 2.25rem);
+  font-weight: 590;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+}
+.sv-ventures-heading button {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0;
+}
+.sv-overview button:disabled {
+  opacity: 0.5;
+}
+.sv-venture-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem;
+  margin-top: 2rem;
+}
+.sv-venture-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  aspect-ratio: 1.6;
+  min-height: 12rem;
+  padding: clamp(1.2rem, 2.1vw, 2.1rem);
+  border: 1px solid var(--sv-line);
+  border-radius: 1.1rem;
+  color: inherit;
+  background: var(--sv-surface);
+  text-decoration: none;
+}
+.sv-venture-card:hover,
+.sv-venture-card:focus-visible {
+  border-color: var(--sv-muted);
+}
+.sv-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.sv-card-top > svg {
+  width: 2.6rem;
+  height: 2.6rem;
+  stroke-width: 2.2;
+}
+.sv-attention {
+  background: var(--sv-ink);
+  color: var(--sv-paper);
+  border-radius: 2rem;
+  font-size: 0.78rem;
+  font-weight: 550;
+  padding: 0.28rem 0.75rem;
+}
+.sv-venture-card h2,
+.sv-venture-card p {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+.sv-venture-card h2 {
+  margin: 0.8rem 0 0.35rem;
+  font-size: clamp(1.2rem, 1.8vw, 1.85rem);
+  font-weight: 570;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  -webkit-line-clamp: 2;
+}
+.sv-venture-card p {
+  color: var(--sv-muted);
+  font-size: clamp(0.88rem, 1.14vw, 1.13rem);
+  line-height: 1.4;
+  -webkit-line-clamp: 2;
+}
+.sv-card-arrow {
+  margin-top: auto;
+  align-self: flex-end;
+  width: 1.35rem;
+  height: 1.35rem;
+}
+.sv-empty,
+.sv-objectives {
+  margin-top: 1.4rem;
+  color: var(--sv-muted);
+}
+.sv-dock {
+  flex: none;
+  padding: 1rem 1.2rem max(1.3rem, env(safe-area-inset-bottom));
+}
+.sv-composer {
+  width: min(100%, 60rem);
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 1.25rem;
+}
+.sv-composer textarea {
+  width: 100%;
+  resize: none;
+  field-sizing: content;
+  max-height: 6rem;
+  margin: 0.25rem 0;
+  padding: 0.25rem 0.35rem;
+  outline: none;
+  line-height: 1.45;
+}
+.sv-composer:focus-within {
+  border-color: var(--sv-muted);
+}
+.sv-composer-tools,
+.sv-attachments {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.sv-composer-tools .sv-send {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.7rem;
+  background: var(--sv-ink);
+  color: var(--sv-paper);
+}
+.sv-composer-tools .sv-mic {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+}
+.sv-attachments button {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+.sv-sidebar {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  color: #fcfbfa;
+  background: #242321;
+  --foreground: #fcfbfa;
+  --muted-foreground: #bdbab6;
+  --accent: #454340;
+  --accent-foreground: #fff;
+}
+.sv-brand {
+  min-height: var(--workspace-topbar-height);
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 0.85rem 0.85rem max(2.85rem, var(--workspace-titlebar-content-left));
+}
+.sv-brand [role="img"] {
+  font-size: 1.35rem;
+  line-height: 1.15;
+  color: inherit;
+}
+.sv-side-menu {
+  min-height: 0;
+  overflow: auto;
+  flex: 1;
+  padding: 0.75rem;
+}
+.sv-side-menu > a,
+.sv-side-footer > a,
+.sv-settings > a {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.85rem;
+  line-height: 1.35;
+  border-radius: 0.7rem;
+  text-decoration: none;
+  color: inherit;
+}
+.sv-side-menu > a span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sv-sidebar a:hover,
+.sv-sidebar button:hover,
+.sv-side-menu > a[aria-current="page"] {
+  background: #ffffff1c;
+}
+.sv-sidebar svg {
+  flex-shrink: 0;
+}
+.sv-side-menu > a svg,
+.sv-side-footer > a svg,
+.sv-settings > a svg {
+  width: 1.12rem;
+  height: 1.12rem;
+}
+.sv-project-label,
+.sv-settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sv-project-label {
+  margin: 1.25rem 0.85rem 0.35rem;
+  color: #dfdcd7;
+  font-size: 0.83rem;
+}
+.sv-sidebar button {
+  border-radius: 0.35rem;
+  padding: 0.25rem;
+}
+.sv-side-footer {
+  padding: 0.75rem;
+}
+.sv-settings > a {
+  flex: 1;
+}
+.sv-settings button,
+.sv-project-label button {
+  color: #bfbcb8;
+}
+.sv-provider-preview {
+  width: min(19rem, 80vw);
+  max-height: 60dvh;
+  overflow: auto;
+  padding: 0.9rem;
+}
+.sv-provider-preview > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0;
+}
+.sv-provider-preview small {
+  margin-inline-start: auto;
+  color: var(--muted-foreground);
+}
+.sv-provider-preview > a,
+.sv-provider-preview > p {
+  display: block;
+  padding-top: 0.6rem;
+}
+@container (max-width: 55rem) {
+  .sv-venture-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 36rem) {
+  .sv-topbar {
+    min-height: 4.7rem;
+  }
+  .sv-profit {
+    gap: 0.55rem;
+    font-size: 0.85rem;
+  }
+  .sv-stop {
+    inset-inline-end: 0.55rem;
+  }
+  .sv-stop span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .sv-venture-grid {
+    grid-template-columns: 1fr;
+    margin-top: 1.1rem;
+  }
+  .sv-venture-card {
+    aspect-ratio: auto;
+    min-height: 10.5rem;
+  }
+  .sv-dock {
+    padding: 0.65rem;
+  }
+}

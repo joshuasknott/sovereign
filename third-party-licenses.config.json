@@ -1,6 +1,21 @@
 {
   "customNotices": [
     {
+      "bundles": ["desktop", "mobile", "web"],
+      "license": "MIT",
+      "name": "T3 Code",
+      "sourceUrl": "https://github.com/pingdotgg/t3code",
+      "generatedNotices": [
+        {
+          "licenseId": "MIT",
+          "copyrights": ["Copyright (c) 2026 T3 Tools Inc."],
+          "preamble": [
+            "Sovereign is an independent project built upon T3 Code and is not affiliated with, endorsed by, or maintained by T3 Tools, Inc."
+          ]
+        }
+      ]
+    },
+    {
       "bundles": ["desktop", "mobile"],
       "license": "MIT",
       "name": "Apple Speech engine (adapted from @react-native-ai/apple)",

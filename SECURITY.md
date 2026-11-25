@@ -1,172 +1,63 @@
 # Security
 
-Report vulnerabilities to [security@t3.codes](mailto:security@t3.codes). The
-[security policy](.github/SECURITY.md) covers disclosure and safe harbor.
+See [.github/SECURITY.md](.github/SECURITY.md) for how to report vulnerabilities affecting Sovereign. For vulnerabilities strictly in upstream T3 Code (`pingdotgg/t3code`), consult upstream's own security policy directly.
 
-The rest of this file is for agents and maintainers auditing T3 Code or triaging
-reports. It defines who is trusted with what, which boundaries a real finding
-crosses, and what is intended. The reasoning behind each boundary lives in
-[environment auth](docs/internals/04_environment-auth.md),
-[T3 Connect](docs/internals/06_t3-connect.md), and
-[remote environments](docs/internals/05_remote.md); read those before reporting
-in their area.
+The rest of this document defines Sovereign's trust model for maintainers and security reviewers: who is trusted with what, which boundaries a real finding crosses, and where enforcement lives. Core runtime auth and remote boundaries are detailed in [environment auth](docs/internals/04_environment-auth.md), [remote environments](docs/internals/05_remote.md), and [Sovereign governance](docs/sovereign/governance-and-finance.md).
 
 ## The model in one paragraph
 
-An environment is a T3 server running as an OS user. It is not a sandbox: it
-intentionally runs agents and terminals with that user's privileges. Clients
-gain authority by pairing, which issues a scoped session. A full-scope session
-equals a shell as the server's OS user, because `terminal:operate` opens a PTY
-and `orchestration:operate` can start a full-access agent. Security here is
-about who can obtain a session, what each session type can reach, and whether
-revocation and ceilings hold, not what a full-scope session can do once issued.
+A Sovereign environment is a local Node/Effect server running as an OS user. Like the upstream T3 Code runtime it builds upon, the host server is **not** a container sandbox for full-scope sessions: a full-scope paired session (`terminal:operate` + `orchestration:operate`) has shell-equivalent privileges as the server's OS user. Security in Sovereign is therefore about (1) who can obtain and widen a session, (2) enforcing strict application-level **commercial governance boundaries** against untrusted external content, agents, narrow clients, and webhooks (emergency stop, £0 default budgets, never-silent-paid-fallback, security bounty scope lock, consent/disclosure checks, and credential isolation), and (3) ensuring revocation, HMAC verification, and SSRF/UI isolation hold.
 
 ## Principals
 
-| Principal                                                                                        | How it gets in                                                           | What it may do                                                                                                                                                                             |
-| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Anyone who reaches the port                                                                      | Network                                                                  | Read the environment descriptor, pair with a valid one-time credential, run OAuth flows. Nothing else.                                                                                     |
-| Full-scope client (desktop, paired browser or phone, `t3 auth session issue`, T3 Connect device) | Pairing, token exchange, Connect mint                                    | Everything the server's OS user can do. This is the default grant.                                                                                                                         |
-| Narrow client                                                                                    | Pairing link with explicit scopes                                        | Only the RPCs and routes its scopes allow. Can never widen its own grant.                                                                                                                  |
-| MCP client (outside agent, subject `mcp-client`)                                                 | OAuth on `/mcp`                                                          | Only `/mcp`, within a read-only grant or a runtime-mode ceiling. Every other route rejects it.                                                                                             |
-| Linked environment (peer link)                                                                   | OAuth client `t3code-peer-link`                                          | Work it starts carries an immutable `linkOrigin` and never exceeds the access it was paired with.                                                                                          |
-| Agent run by T3                                                                                  | Thread's runtime mode and thread credential                              | Within its runtime mode, managed policy, and the MCP access declared per tool.                                                                                                             |
-| Guest link                                                                                       | HMAC token for one share                                                 | Read one thread and propose messages. Never a session; no RPC, WebSocket, or MCP path accepts it.                                                                                          |
-| Signed asset URL                                                                                 | Minted with `filesystem:read`                                            | One file, by device and inode identity, until it expires.                                                                                                                                  |
-| Webhook sender                                                                                   | A task's webhook URL, plus its signing secret when the task requires one | Start that one task's run with content of its choosing. Nothing in the request is trusted beyond the signature check.                                                                      |
-| T3 Connect relay                                                                                 | Environment link                                                         | Trusted broker for mint requests. It never sees environment session tokens. With `requireConnectDeviceApproval` on, a new device key also needs approval from someone with `access:write`. |
-| Managed policy                                                                                   | Admin-deployed file, read at startup                                     | Ceilings and locks the server enforces for every client.                                                                                                                                   |
-| Preview pages, HTML renders, file previews, agent output                                         | Rendered by clients                                                      | Untrusted content. It must never run script in the app's origin or reach Electron IPC or Node.                                                                                             |
+| Principal                                                                                                   | How it gets in                                                                                                          | What it may do                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anyone who reaches the port                                                                                 | Network                                                                                                                 | Read environment descriptor, pair with a valid one-time credential, run OAuth flows, or POST signed webhooks to `/api/sovereign/webhooks/:integrationId`. Nothing else.                                                                                                                                                          |
+| Full-scope client (desktop, paired web/mobile, `t3 auth session issue`)                                     | Pairing, token exchange                                                                                                 | Everything the server's OS user can do, including all `sovereign:*` scopes.                                                                                                                                                                                                                                                      |
+| Narrow client                                                                                               | Pairing link with explicit scopes (`sovereign:read`, `sovereign:operate`, `sovereign:approve`, `sovereign:admin`, etc.) | Only the RPCs and routes its granted scopes allow. Can never widen its own grant.                                                                                                                                                                                                                                                |
+| MCP client / Agent run by Sovereign                                                                         | OAuth on `/mcp` or thread credential                                                                                    | Within its runtime mode, managed policy, and least-privilege MCP tool declarations. Sovereign's MCP toolkit exposes only 6 bounded tools (3 reads + record opportunity, create artifact, request approval) and **never** allows self-approval, budget edits, emergency-stop override, security-scope unlocking, or secret reads. |
+| Linked environment (peer link)                                                                              | OAuth client `t3code-peer-link`                                                                                         | Work carries an immutable `linkOrigin` and never exceeds the paired grant.                                                                                                                                                                                                                                                       |
+| Guest link                                                                                                  | HMAC token for one share                                                                                                | Read one thread and propose messages. Never a session; no RPC, WebSocket, or MCP path accepts it.                                                                                                                                                                                                                                |
+| Signed asset URL                                                                                            | Minted with `filesystem:read`                                                                                           | One file, by device and inode identity, until it expires.                                                                                                                                                                                                                                                                        |
+| Inbound Sovereign webhook sender                                                                            | `POST /api/sovereign/webhooks/:integrationId` + provider HMAC signing secret                                            | Submit signed events (max 1 MiB) for that single enabled integration. Raw-byte constant-time HMAC verification and replay-key deduplication run before any payload is accepted or reconciled into `sovereign_ledger_entries`.                                                                                                    |
+| External untrusted data (GitHub issues, `CONTRIBUTING.md`, scraped prospect sites, security programme text) | Ingested by integrations / venture workflows                                                                            | Untrusted data only. Subject to SSRF blocking, size/redirect limits, and prompt-injection quarantine (`sanitizeUntrustedContent`). Must never execute actions bypassing `SovereignGovernanceService`.                                                                                                                            |
+| Preview pages, HTML renders, file previews, agent output                                                    | Rendered by clients                                                                                                     | Untrusted content. Must never run script in the app's origin or reach Electron IPC / Node.                                                                                                                                                                                                                                       |
 
 ## A real finding crosses one of these
 
-1. **No credential → session.** Any route or socket granting access without
-   a valid credential, or a pairing credential redeemable twice.
-2. **Scope escalation.** An RPC, HTTP route, or MCP tool running without its
-   declared scope; pairing or token exchange widening a grant; an
-   `mcp-client` session reaching a non-`/mcp` route; a read-only MCP grant
-   calling a write tool.
-3. **Mode or policy escalation.** An agent, MCP client, or peer link acting
-   above its runtime-mode ceiling, `linkOrigin`, `T3-Mode-Limit`, or managed
-   policy.
-4. **Guest escape.** A guest token reading another thread, acting beyond
-   proposing messages, or surviving a closed or replaced share.
-5. **Revocation that doesn't take effect.** A revoked session, device key,
-   pairing link, or peer link that still works. Documented exception: signed
-   asset URLs last until they expire.
-6. **Credential exposure.** Tokens or secrets reaching logs, traces, telemetry,
-   the relay, socket URLs (outside short-lived tickets), the access read model,
-   or error messages. A token sent to an address that has not answered as the
-   expected environment, or a token paired over HTTPS sent over plain HTTP.
-7. **Impersonation and egress.** Another process or the relay impersonating an
-   environment; endpoint discovery, previews, or webhooks used to reach
-   arbitrary hosts (SSRF).
-8. **Client-side code execution.** Untrusted content running script in the web
-   origin, the desktop renderer, or with access to preload or IPC.
-9. **Filesystem writes escaping workspace path rules.** Reads are separate:
-   `filesystem:read` intentionally covers the whole OS account.
+1. **No credential → session.** Any route or socket granting access without a valid credential, or a pairing credential redeemable twice.
+2. **Scope escalation.** Any RPC (including `sovereign.*`), HTTP route, or MCP tool running without its declared scope; pairing/token exchange widening a grant; an `mcp-client` session reaching a non-`/mcp` route; a `sovereign:operate` client deciding approvals (`sovereign:approve`) or altering emergency stop/integrations (`sovereign:admin`); attaching a `SecretReference` without `providers:manage`.
+3. **Commercial governance bypass.** An agent, workflow, or external input bypassing global Emergency Stop, a paused venture, monthly budget caps, `discretionarySpendAllowed: false`, `paidFallbackMode: "deny"`, UK PECR/GDPR opt-out/consent checks, or the **Security Bounty authorisation scope/method/expiry lock**.
+4. **Webhook forgery or replay double-booking.** `/api/sovereign/webhooks/:integrationId` accepting an unsigned, tampered, or expired-timestamp payload, bypassing the 1 MiB cap, or double-booking verified revenue on replayed deliveries.
+5. **Mode, policy, or guest escape.** Acting above a runtime-mode ceiling, `linkOrigin`, managed policy, or guest share boundary.
+6. **Revocation that doesn't take effect.** A revoked session, device key, pairing link, or peer link that still works (documented exception: signed asset URLs last until expiry).
+7. **Credential exposure.** Integration API keys, webhook secrets, provider secrets, or session tokens reaching `sovereign_integrations` SQLite rows, RPC responses, MCP outputs, logs, traces, error messages, or socket URLs.
+8. **Impersonation and SSRF egress.** Another process impersonating an environment; `webResearchDriver` (`fetchAndAuditWebsite` without explicit `allowLocalLab: true`), previews, or endpoint probes reaching loopback, cloud metadata (`169.254.169.254`), or private RFC1918/IPv6 ranges.
+9. **Client-side code execution.** Untrusted content running script in the web origin, desktop renderer, or reaching preload/IPC.
+10. **Filesystem writes escaping workspace path rules.** (`filesystem:read` intentionally covers the OS user account.)
 
 ## Intended, not vulnerabilities
 
-- A full-scope session gives a shell. Leaking its token is serious, but the bug
-  is the leak, not the shell. The same applies to a narrow session holding
-  `terminal:operate` or `orchestration:operate`: reaching via another route
-  what its shell can already do crosses no boundary, though it can still be an
-  ordinary bug. That stops at what a shell as the server's OS user cannot reach:
-  another client's device, what another scope guards by name (as
-  `providers:manage` does for secret references), a managed-policy ceiling or
-  lock, and access that outlives the session's revocation. Where the session
-  can obtain that shell, file contents are within its reach, so reading a file
-  via a route that does not check `filesystem:read` crosses no boundary.
-- The default grant includes `access:write`, so a full-scope session can mint
-  more pairing links and sessions. They appear in Sharing & access, and "revoke
-  all others" removes them.
-- `filesystem:read` reads anything the server's OS user can read, including
-  paths outside projects.
-- Plain HTTP on a LAN or tailnet is the user's choice. `t3 serve` warns when
-  advertising a non-loopback HTTP address. The iOS app allows arbitrary loads so
-  it can reach these addresses.
-- `access-control-allow-origin: *` on the environment API. Auth is a bearer
-  header, so the wildcard grants nothing a caller without a token lacks.
-- Rendered Markdown loads remote images and media from the host its author
-  names, so that host learns the reader's network address and when the content
-  was shown. A page in a preview tab can likewise start a download, as it can
-  in a browser. It is a finding when the request carries a credential or names
-  the environment it was rendered in, when it is made where the product says
-  none is made, or when the app does for the content what the content could
-  not do from where it runs (see 7 and 8).
-- A full-access agent can do whatever the user can. Prompt injection that stays
-  within the agent's mode is the provider's concern; one that lets it act above
-  that mode is in scope (see 3).
-- A compromised relay signing key can mint for linked environments. That is
-  the stated trust assumption; device approval is the mitigation.
-- `T3CODE_DEV_AUTH_TOKEN` and dev startup URLs are administrative by design and
-  ignored outside development servers.
-- A webhook URL is a credential for one task. Unless the task requires a
-  signature, whoever holds the URL can start that task's run, and the request's
-  content, within the route's limits, is theirs to choose. It is a finding when
-  a request starts a different task, runs without a signature the task
-  requires, or has its values treated as anything but untrusted data. Tokens in
-  or around the request remain covered by 6.
-- The machine owner's own configuration. Whoever sets a provider's launch
-  arguments, an environment variable, a binary path, or the endpoint or file T3
-  Code points at already holds the OS account, so a value weakening their own
-  setup is their choice. It is a finding when a narrower principal can set it
-  for them (a narrow client, an MCP client, an agent below full access,
-  repository content), when [managed policy](docs/user/managed-policy.md) locks
-  the setting and the value still applies, or when the value leaks (see 6).
-  Choosing a host does not make it trusted: what a configured endpoint can do
-  to the server or its clients stays in scope.
-- An attacker already running code as the same OS user. That includes one whose
-  only move is to rewrite files that user owns outside a workspace: T3 Code's
-  data directory, its installed helpers, the user's own config. Another OS
-  account on the same machine is not this attacker; neither is repository
-  content or an agent below full access, which write inside a workspace without
-  holding the OS account.
+- A full-scope session gives shell-equivalent authority as the server's OS user. Leaking the token is a vulnerability; a full-scope owner intentionally raising their own budget cap, unlocking a security programme scope, or running shell commands is intended.
+- Plain HTTP on a LAN or tailnet when explicitly enabled by the operator (`t3 up --lan` / `T3CODE_HOST`).
+- `T3CODE_DEV_AUTH_TOKEN` and dev startup URLs are administrative by design and ignored outside development servers.
+- `runLocalVulnerableLabAssessment` intentionally binds an ephemeral loopback fixture (`127.0.0.1:0`) solely for offline security-workflow verification after checking security authorisation.
+- An attacker who already executes arbitrary code as the same OS user owns the user's files (`SOVEREIGN_HOME`, SQLite DB, local secrets).
 
 ## Where enforcement lives
 
-- Session issuance, pairing, token exchange: [`auth/http.ts`](apps/server/src/auth/http.ts), [`auth/EnvironmentAuth.ts`](apps/server/src/auth/EnvironmentAuth.ts), [`auth/dpop.ts`](apps/server/src/auth/dpop.ts)
-- Per-RPC scopes: [`auth/RpcAuthorization.ts`](apps/server/src/auth/RpcAuthorization.ts). [`clientRpcPermissions.ts`](packages/contracts/src/clientRpcPermissions.ts) only drives client UI and is never the boundary.
-- MCP: [`auth/McpOAuth.ts`](apps/server/src/auth/McpOAuth.ts), [`mcp/McpToolAccess.ts`](apps/server/src/mcp/McpToolAccess.ts), [`mcp/threadAccess.ts`](apps/server/src/mcp/threadAccess.ts), [`mcp/linkOrigin.ts`](apps/server/src/mcp/linkOrigin.ts)
-- Guest links: [`guest/GuestShareService.ts`](apps/server/src/guest/GuestShareService.ts)
-- Files and assets: [`workspace/WorkspaceFileSystem.ts`](apps/server/src/workspace/WorkspaceFileSystem.ts), [`assets/AssetAccess.ts`](apps/server/src/assets/AssetAccess.ts)
-- Managed policy: [`apps/server/src/policy`](apps/server/src/policy)
-- T3 Connect: [`cloud/CloudLink.ts`](apps/server/src/cloud/CloudLink.ts), [`EnvironmentConnector.ts`](infra/relay/src/environments/EnvironmentConnector.ts)
-- Desktop preview isolation: [`preview/WebviewPreferences.ts`](apps/desktop/src/preview/WebviewPreferences.ts)
+- **Session issuance, pairing, token exchange:** [`apps/server/src/auth/http.ts`](apps/server/src/auth/http.ts), [`apps/server/src/auth/EnvironmentAuth.ts`](apps/server/src/auth/EnvironmentAuth.ts), [`apps/server/src/auth/dpop.ts`](apps/server/src/auth/dpop.ts)
+- **Per-RPC scopes:** [`apps/server/src/auth/RpcAuthorization.ts`](apps/server/src/auth/RpcAuthorization.ts) (authoritative); [`packages/contracts/src/clientRpcPermissions.ts`](packages/contracts/src/clientRpcPermissions.ts) (UI gating only)
+- **Sovereign governance, emergency stop, budgets, security lock, prompt-injection quarantine:** [`apps/server/src/sovereign/SovereignGovernanceService.ts`](apps/server/src/sovereign/SovereignGovernanceService.ts)
+- **Sovereign UK PECR/GDPR consent & AI disclosure:** [`apps/server/src/sovereign/SovereignSalesService.ts`](apps/server/src/sovereign/SovereignSalesService.ts), [`apps/server/src/sovereign/integrations/emailDrivers.ts`](apps/server/src/sovereign/integrations/emailDrivers.ts), [`apps/server/src/sovereign/integrations/voiceDrivers.ts`](apps/server/src/sovereign/integrations/voiceDrivers.ts)
+- **Sovereign provider pool & never-silent-paid-fallback:** [`apps/server/src/provider/ProviderPoolRouter.ts`](apps/server/src/provider/ProviderPoolRouter.ts), [`apps/server/src/provider/billingClassifier.ts`](apps/server/src/provider/billingClassifier.ts)
+- **Sovereign credential isolation & HMAC webhooks:** [`apps/server/src/sovereign/SovereignIntegrationService.ts`](apps/server/src/sovereign/SovereignIntegrationService.ts), [`apps/server/src/sovereign/SovereignHttpRoutes.ts`](apps/server/src/sovereign/SovereignHttpRoutes.ts), [`apps/server/src/sovereign/integrations/paymentDrivers.ts`](apps/server/src/sovereign/integrations/paymentDrivers.ts)
+- **Web research SSRF & sanitization guard:** [`apps/server/src/sovereign/integrations/webResearchDriver.ts`](apps/server/src/sovereign/integrations/webResearchDriver.ts)
+- **MCP access & Sovereign toolkit:** [`apps/server/src/mcp/McpToolAccess.ts`](apps/server/src/mcp/McpToolAccess.ts), [`apps/server/src/mcp/toolkits/sovereign.ts`](apps/server/src/mcp/toolkits/sovereign.ts)
+- **Guest links, files, managed policy, desktop preview isolation:** [`apps/server/src/guest/GuestShareService.ts`](apps/server/src/guest/GuestShareService.ts), [`apps/server/src/workspace/WorkspaceFileSystem.ts`](apps/server/src/workspace/WorkspaceFileSystem.ts), [`apps/server/src/assets/AssetAccess.ts`](apps/server/src/assets/AssetAccess.ts), [`apps/server/src/policy`](apps/server/src/policy), [`apps/desktop/src/preview/WebviewPreferences.ts`](apps/desktop/src/preview/WebviewPreferences.ts)
 
-## How to audit and triage
+## Auditing and triage guidance
 
-- Name the precondition first. If a chain starts with "the attacker holds a
-  full-scope token", it is a new vulnerability only if it widens that token's
-  reach (2–3), outlives revocation (5), or shows how the token leaks (6).
-- Name the actor next and what they can already do. If the only actor is the
-  user on their own device, or a principal reaching the same outcome via a
-  documented route, no boundary is crossed unless data goes somewhere they did
-  not send it. It may still be a bug; report it as one.
-- Read tests and comments beside the code before calling a behaviour a defect.
-  They show author intent and are evidence, not a decision: a test can pin a
-  behaviour nobody chose, and a comment can be stale. Only this file and the
-  docs say what is intended. If only a test or comment supports a behaviour,
-  report it and say so.
-- Follow the claim to its effect. A guard in a caller, a schema, or a version
-  check elsewhere often means the cited lines cannot do what the report says.
-- Rate severity by what the actor must already hold, not the worst outcome
-  named. Each of these lowers severity and none removes the finding: a narrow
-  grant the owner chose to issue (the default grant is full scope); another OS
-  account on the same machine; a host or service the owner connected turning
-  hostile; a change that must land in the moment between a person's look and
-  their action; a person acting on prepared input (opening a file, pasting,
-  following a link); and an effect limited to resource use or a stalled
-  client. A finding that needs none of these, or that yields a session, a
-  credential, or code execution above the actor's grant, keeps its severity.
-- Check the reported commit against `main`. Reports often trail fixes.
-- Prove a finding with a failing test at the lowest layer that shows it, as
-  [Verifying](AGENTS.md#verifying) describes. Do not run a PoC against
-  `~/.t3/userdata` or any live environment; use a dev server on seeded data.
-- Treat report attachments as untrusted. Extract them into an empty directory
-  outside the worktree and read PoCs before running anything.
-- Fix confirmed findings rather than filing them. Keep advisory details out of
-  public PRs until the fix ships.
-- When a boundary here changes, update this file and the internal doc that
-  explains it in the same PR.
+- Name the precondition and actor first, and trace guards through `RpcAuthorization.ts`, Effect schemas, and `SovereignGovernanceService.ts`.
+- Prove any finding with a deterministic failing test at the lowest layer (never run a PoC against live `~/.t3/userdata` or a live `SOVEREIGN_HOME`).
+- Update this file and the corresponding doc in `docs/sovereign/` or `docs/internals/` whenever a trust boundary changes.

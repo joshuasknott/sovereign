@@ -196,7 +196,13 @@ import {
   ProviderUploadFeedbackInput,
   ProviderUploadFeedbackResult,
 } from "./provider.ts";
-import { ProviderInstanceId, ProviderInstanceMutation } from "./providerInstance.ts";
+import {
+  ProviderInstanceId,
+  ProviderInstanceMutation,
+  ServerRemoveProviderInstanceInput,
+  ServerUpsertProviderInstanceInput,
+} from "./providerInstance.ts";
+import { SOVEREIGN_RPCS, SOVEREIGN_WS_METHODS } from "./sovereign/rpc.ts";
 import {
   IssueCandidates,
   IssueCommentInput,
@@ -611,6 +617,8 @@ export const WS_METHODS = {
   peerLinksPairLink: "peerLinks.pairLink",
   serverGetSettings: "server.getSettings",
   serverUpdateSettings: "server.updateSettings",
+  serverUpsertProviderInstance: "server.upsertProviderInstance",
+  serverRemoveProviderInstance: "server.removeProviderInstance",
   serverDiscoverSourceControl: "server.discoverSourceControl",
   serverCheckSecretSource: "server.checkSecretSource",
   serverSearchAcpRegistry: "server.searchAcpRegistry",
@@ -742,6 +750,7 @@ export const WS_METHODS = {
   subscribeServerLifecycle: "subscribeServerLifecycle",
   subscribeAuthAccess: "subscribeAuthAccess",
   subscribeResourceTelemetry: "subscribeResourceTelemetry",
+  ...SOVEREIGN_WS_METHODS,
 } as const;
 
 const WsServerUpsertKeybindingRpc = Rpc.make(WS_METHODS.serverUpsertKeybinding, {
@@ -1031,6 +1040,18 @@ const WsServerUpdateSettingsRpc = Rpc.make(WS_METHODS.serverUpdateSettings, {
     patch: ClientServerSettingsPatch,
     providerInstanceMutation: Schema.optionalKey(ProviderInstanceMutation),
   }),
+  success: ServerSettings,
+  error: Schema.Union([ServerSettingsError, EnvironmentAuthorizationError]),
+});
+
+const WsServerUpsertProviderInstanceRpc = Rpc.make(WS_METHODS.serverUpsertProviderInstance, {
+  payload: ServerUpsertProviderInstanceInput,
+  success: ServerSettings,
+  error: Schema.Union([ServerSettingsError, EnvironmentAuthorizationError]),
+});
+
+const WsServerRemoveProviderInstanceRpc = Rpc.make(WS_METHODS.serverRemoveProviderInstance, {
+  payload: ServerRemoveProviderInstanceInput,
   success: ServerSettings,
   error: Schema.Union([ServerSettingsError, EnvironmentAuthorizationError]),
 });
@@ -2522,6 +2543,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsServerGetSettingsRpc,
   WsServerReclaimDatabaseSpaceRpc,
   WsServerUpdateSettingsRpc,
+  WsServerUpsertProviderInstanceRpc,
+  WsServerRemoveProviderInstanceRpc,
   WsPeerLinksListRpc,
   WsPeerLinksNamesRpc,
   WsPeerLinksLinkRpc,
@@ -2735,4 +2758,5 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationV2SubscribeThreadRpc,
   WsOrchestrationV2SubscribeCommandOutputRpc,
   WsOrchestrationV2SubscribePromptSuggestionRpc,
+  ...SOVEREIGN_RPCS,
 ).middleware(RpcScopeAuthorization);

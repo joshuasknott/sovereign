@@ -441,6 +441,73 @@ function piApprovalRequestKind(title: string): "command" | "file-change" {
 /** Pi 1.4.0 rejects prompts with this when they race a compaction it already started. */
 const PI_COMPACTING_PROMPT_REJECTION = "Cannot submit a prompt while compaction is in progress";
 
+const PI_RATE_LIMIT_MESSAGE_PATTERNS: ReadonlyArray<RegExp> = [
+  /\btoo many requests\b/i,
+  /\brate[\s_-]*limit(?:ed|s|ing)?\b/i,
+  /\b(?:usage|quota|credit|spend|token|request)[\s_-]*limit(?:\s+(?:reached|exceeded|hit))?\b/i,
+  /\b(?:exceeded|exhausted|out of)\b.{0,40}\b(?:quota|credits|usage|rate limit|allowance)\b/i,
+  /\b(?:quota|credits|usage limit)\b.{0,40}\b(?:exceeded|exhausted|reached|depleted)\b/i,
+  /\bresource[_\s-]*exhausted\b/i,
+  /\b(?:throttl(?:ed|ing)(?:\s+exception)?|toomanyrequestsexception|servicequotaexceededexception)\b/i,
+  /\b(?:http|status|api error|error)\s*[:(]?\s*429\b/i,
+  /\b429\b.{0,40}\b(?:rate|limit|quota|too many|throttl|exhaust|retry|capacity)\b/i,
+];
+const PI_RATE_LIMIT_ISO_RESET_PATTERN =
+  /(?:resets?\s+at|reset[_ ]?at|try again (?:at|after)|available (?:at|after)|until)\s*[:=]?\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))/i;
+const PI_RATE_LIMIT_RETRY_AFTER_PATTERN =
+  /\bretry[- ]after\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(ms|milliseconds?|s|sec|secs|seconds?|m|min|mins|minutes?|h|hr|hrs|hours?)?\b/i;
+
+function extractPiRateLimitResetAt(message: string, nowMs?: number): string | null {
+  const isoMatch = PI_RATE_LIMIT_ISO_RESET_PATTERN.exec(message)?.[1];
+  if (isoMatch !== undefined) {
+    const parsed = Date.parse(isoMatch);
+    if (Number.isFinite(parsed) && (nowMs === undefined || parsed > nowMs)) {
+      return DateTime.formatIso(DateTime.makeUnsafe(parsed));
+    }
+  }
+  if (nowMs !== undefined) {
+    const retryMatch = PI_RATE_LIMIT_RETRY_AFTER_PATTERN.exec(message);
+    if (retryMatch?.[1] !== undefined) {
+      const amount = Number(retryMatch[1]);
+      if (Number.isFinite(amount) && amount > 0) {
+        const unit = retryMatch[2]?.toLowerCase() ?? "s";
+        const multiplier =
+          unit.startsWith("ms") || unit.startsWith("millisecond")
+            ? 1
+            : unit.startsWith("h")
+              ? 3_600_000
+              : unit.startsWith("m")
+                ? 60_000
+                : 1_000;
+        return DateTime.formatIso(DateTime.makeUnsafe(nowMs + Math.round(amount * multiplier)));
+      }
+    }
+  }
+  return null;
+}
+
+export function classifyPiProviderFailure(input: {
+  readonly message: string;
+  readonly retryable?: boolean | null;
+  readonly nowMs?: number;
+}): OrchestrationV2ProviderFailure {
+  const rateLimited = PI_RATE_LIMIT_MESSAGE_PATTERNS.some((pattern) => pattern.test(input.message));
+  if (rateLimited) {
+    const resetAt = extractPiRateLimitResetAt(input.message, input.nowMs);
+    return makeProviderFailure({
+      message: input.message,
+      class: "usage_limit",
+      retryable: input.retryable ?? true,
+      ...(resetAt === null ? {} : { resetAt }),
+    });
+  }
+  return makeProviderFailure({
+    message: input.message,
+    class: "provider_error",
+    ...(input.retryable === undefined ? {} : { retryable: input.retryable }),
+  });
+}
+
 interface PiPromptSend {
   readonly providerTurnId: OrchestrationV2ProviderTurn["id"];
   readonly kind: "turn_start" | "steer";
@@ -2415,9 +2482,10 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
               turn.reportedModel = `${reportedProvider}/${reportedModelId}`;
             }
             if (recordString(message, "stopReason") === "error" && turn.failure === null) {
-              turn.failure = makeProviderFailure({
+              const observedAt = yield* DateTime.now;
+              turn.failure = classifyPiProviderFailure({
                 message: recordString(message, "errorMessage") ?? "Pi reported a model error.",
-                class: "provider_error",
+                nowMs: DateTime.toEpochMillis(observedAt),
               });
             }
             return;
@@ -2512,10 +2580,10 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
               Math.trunc(recordNumber(event, "maxAttempts") ?? attempt),
             );
             const retryDelayMs = Math.max(0, Math.trunc(recordNumber(event, "delayMs") ?? 0));
-            const failure = makeProviderFailure({
+            const failure = classifyPiProviderFailure({
               message: recordString(event, "errorMessage") ?? "Pi provider request failed.",
-              class: "provider_error",
               retryable: true,
+              nowMs: DateTime.toEpochMillis(emittedAt),
             });
             const current = turn.activeProviderRetry;
             const providerRetry = {
@@ -2552,10 +2620,10 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
               turn.failure = null;
               return;
             }
-            const failure = makeProviderFailure({
+            const failure = classifyPiProviderFailure({
               message: recordString(event, "finalError") ?? "Pi auto-retry failed.",
-              class: "provider_error",
               retryable: false,
+              nowMs: DateTime.toEpochMillis(emittedAt),
             });
             const attempt = Math.max(1, Math.trunc(recordNumber(event, "attempt") ?? 1));
             const current = turn.activeProviderRetry;
@@ -2740,9 +2808,10 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
                   ? turn
                   : null;
             if (failedTurn !== null) {
-              const failure = makeProviderFailure({
+              const observedAt = yield* DateTime.now;
+              const failure = classifyPiProviderFailure({
                 message: recordString(event, "error") ?? "Pi rejected the prompt.",
-                class: "provider_error",
+                nowMs: DateTime.toEpochMillis(observedAt),
               });
               if (failedTurn.adoptedWake && command === "prompt") {
                 failedTurn.rejectedPromptFailure = failure;

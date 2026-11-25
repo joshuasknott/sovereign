@@ -343,9 +343,214 @@ class AcpModelSelectionError extends Schema.TaggedError<AcpModelSelectionError>(
 }
 
 const isAcpModelSelectionError = Schema.is(AcpModelSelectionError);
+const isAcpRequestError = Schema.is(EffectAcpErrors.AcpRequestError);
 const isProviderCompactionUnsupportedError = Schema.is(
   ProviderAdapter.ProviderCompactionUnsupportedError,
 );
+
+const ACP_RATE_LIMIT_NUMERIC_CODES = new Set([429, -32029, -31001]);
+const ACP_RATE_LIMIT_STRING_CODES = new Set([
+  "429",
+  "rate_limited",
+  "rate_limit_exceeded",
+  "insufficient_quota",
+  "resource_exhausted",
+  "throttlingexception",
+  "toomanyrequestsexception",
+  "servicequotaexceededexception",
+]);
+const ACP_RATE_LIMIT_MESSAGE_PATTERNS: ReadonlyArray<RegExp> = [
+  /\btoo many requests\b/i,
+  /\brate[\s_-]*limit(?:ed|s|ing)?\b/i,
+  /\b(?:usage|quota|credit|spend|token|request)[\s_-]*limit(?:\s+(?:reached|exceeded|hit))?\b/i,
+  /\b(?:exceeded|exhausted|out of)\b.{0,40}\b(?:quota|credits|usage|rate limit|allowance)\b/i,
+  /\b(?:quota|credits|usage limit)\b.{0,40}\b(?:exceeded|exhausted|reached|depleted)\b/i,
+  /\bresource[_\s-]*exhausted\b/i,
+  /\b(?:throttl(?:ed|ing)(?:\s+exception)?|toomanyrequestsexception|servicequotaexceededexception)\b/i,
+  /\b(?:http|status|api error|error)\s*[:(]?\s*429\b/i,
+  /\b429\b.{0,40}\b(?:rate|limit|quota|too many|throttl|exhaust|retry|capacity)\b/i,
+];
+const ACP_RATE_LIMIT_ISO_RESET_PATTERN =
+  /(?:resets?\s+at|reset[_ ]?at|try again (?:at|after)|available (?:at|after)|until)\s*[:=]?\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))/i;
+const ACP_RATE_LIMIT_RETRY_AFTER_PATTERN =
+  /\bretry[- ]after\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(ms|milliseconds?|s|sec|secs|seconds?|m|min|mins|minutes?|h|hr|hrs|hours?)?\b/i;
+
+function acpObjectField(value: unknown, key: string): unknown {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Readonly<Record<string, unknown>>)[key]
+    : undefined;
+}
+
+function acpNestedErrorRecord(data: unknown): Readonly<Record<string, unknown>> | undefined {
+  const nested = acpObjectField(data, "error");
+  if (typeof nested === "object" && nested !== null && !Array.isArray(nested)) {
+    return nested as Readonly<Record<string, unknown>>;
+  }
+  return typeof data === "object" && data !== null && !Array.isArray(data)
+    ? (data as Readonly<Record<string, unknown>>)
+    : undefined;
+}
+
+function extractAcpRateLimitResetAt(input: {
+  readonly message?: string | undefined;
+  readonly data?: unknown;
+  readonly nowMs?: number | undefined;
+}): string | null {
+  const record = acpNestedErrorRecord(input.data);
+  if (record !== undefined) {
+    for (const key of ["resetAt", "resetsAt", "reset_at", "resets_at"]) {
+      const candidate = record[key];
+      if (typeof candidate === "string") {
+        const parsed = Date.parse(candidate);
+        if (Number.isFinite(parsed) && (input.nowMs === undefined || parsed > input.nowMs)) {
+          return DateTime.formatIso(DateTime.makeUnsafe(parsed));
+        }
+      } else if (typeof candidate === "number" && Number.isFinite(candidate)) {
+        const millis =
+          candidate > 1_000_000_000_000
+            ? Math.trunc(candidate)
+            : candidate > 1_000_000_000
+              ? Math.trunc(candidate * 1_000)
+              : NaN;
+        if (Number.isFinite(millis) && (input.nowMs === undefined || millis > input.nowMs)) {
+          return DateTime.formatIso(DateTime.makeUnsafe(millis));
+        }
+      }
+    }
+    if (input.nowMs !== undefined) {
+      for (const [key, multiplier] of [
+        ["retryAfterMs", 1],
+        ["retry_after_ms", 1],
+        ["retryAfterSeconds", 1_000],
+        ["retry_after_seconds", 1_000],
+        ["retryAfter", 1_000],
+        ["retry_after", 1_000],
+      ] as const) {
+        const candidate = record[key];
+        if (typeof candidate === "number" && Number.isFinite(candidate) && candidate > 0) {
+          return DateTime.formatIso(
+            DateTime.makeUnsafe(input.nowMs + Math.round(candidate * multiplier)),
+          );
+        }
+      }
+    }
+  }
+
+  const message = input.message;
+  if (message === undefined || message.length === 0) return null;
+
+  const isoMatch = ACP_RATE_LIMIT_ISO_RESET_PATTERN.exec(message)?.[1];
+  if (isoMatch !== undefined) {
+    const parsed = Date.parse(isoMatch);
+    if (Number.isFinite(parsed) && (input.nowMs === undefined || parsed > input.nowMs)) {
+      return DateTime.formatIso(DateTime.makeUnsafe(parsed));
+    }
+  }
+
+  if (input.nowMs !== undefined) {
+    const retryMatch = ACP_RATE_LIMIT_RETRY_AFTER_PATTERN.exec(message);
+    if (retryMatch?.[1] !== undefined) {
+      const amount = Number(retryMatch[1]);
+      if (Number.isFinite(amount) && amount > 0) {
+        const unit = retryMatch[2]?.toLowerCase() ?? "s";
+        const multiplier =
+          unit.startsWith("ms") || unit.startsWith("millisecond")
+            ? 1
+            : unit.startsWith("h")
+              ? 3_600_000
+              : unit.startsWith("m")
+                ? 60_000
+                : 1_000;
+        return DateTime.formatIso(
+          DateTime.makeUnsafe(input.nowMs + Math.round(amount * multiplier)),
+        );
+      }
+    }
+  }
+
+  return null;
+}
+
+function isAcpRateLimitCode(value: unknown): boolean {
+  if (typeof value === "number") return ACP_RATE_LIMIT_NUMERIC_CODES.has(value);
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized.length > 0 && ACP_RATE_LIMIT_STRING_CODES.has(normalized);
+  }
+  return false;
+}
+
+function isAcpRateLimitMessage(message: string | undefined): boolean {
+  if (message === undefined || message.length === 0) return false;
+  return ACP_RATE_LIMIT_MESSAGE_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+export function classifyAcpPromptFailure(
+  cause: unknown,
+  options?: {
+    readonly message?: string | undefined;
+    readonly code?: string | null | undefined;
+    readonly nowMs?: number | undefined;
+    readonly includeRequestMessage?: boolean | undefined;
+  },
+): OrchestrationV2ProviderFailure {
+  const acpError = isAcpRequestError(cause) ? cause : undefined;
+  const data = acpError?.data;
+  const dataRecord = acpNestedErrorRecord(data);
+  const dataMessage =
+    typeof dataRecord?.message === "string"
+      ? dataRecord.message
+      : typeof dataRecord?.detail === "string"
+        ? dataRecord.detail
+        : undefined;
+  const candidateMessage = options?.message ?? acpError?.errorMessage ?? dataMessage;
+  const fallbackMessage =
+    cause instanceof Error && candidateMessage === undefined ? cause.message : candidateMessage;
+
+  const rateLimited =
+    isAcpRateLimitCode(options?.code) ||
+    isAcpRateLimitCode(acpError?.code) ||
+    isAcpRateLimitCode(dataRecord?.code) ||
+    isAcpRateLimitCode(dataRecord?.type) ||
+    isAcpRateLimitCode(dataRecord?.status) ||
+    isAcpRateLimitCode(dataRecord?.statusCode) ||
+    isAcpRateLimitMessage(fallbackMessage) ||
+    isAcpRateLimitMessage(dataMessage);
+
+  const code = options?.code ?? (acpError !== undefined ? String(acpError.code) : undefined);
+
+  if (rateLimited) {
+    const resetAt = extractAcpRateLimitResetAt({
+      message: fallbackMessage ?? dataMessage,
+      data,
+      nowMs: options?.nowMs,
+    });
+    const message =
+      options?.includeRequestMessage === true
+        ? (fallbackMessage ?? "Provider rate limit reached.")
+        : (options?.message ??
+          "The provider reported a rate limit or usage limit. Retry after the limit resets.");
+    return makeProviderFailure({
+      cause,
+      message,
+      ...(code === undefined ? {} : { code }),
+      class: "usage_limit",
+      retryable: true,
+      ...(resetAt === null ? {} : { resetAt }),
+    });
+  }
+
+  return makeProviderFailure({
+    cause,
+    ...(options?.message !== undefined
+      ? { message: options.message }
+      : options?.includeRequestMessage === true && acpError !== undefined
+        ? { message: acpError.errorMessage }
+        : {}),
+    ...(code === undefined ? {} : { code }),
+    class: "provider_error",
+  });
+}
 
 /**
  * Turn-start refusals that leave the session usable. Other start failures, such as a session that
@@ -5754,19 +5959,20 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
           return true;
         });
 
-        const idleErrorFailure = (error: EffectAcpSchema.PromptResponse["error"]) =>
-          flavor.promptFailure?.(
-            new EffectAcpErrors.AcpRequestError({
-              code: error?.code ?? -32603,
-              errorMessage: error?.message ?? "Provider turn failed.",
-              ...(error?.data === undefined ? {} : { data: error.data }),
-            }),
-          ) ??
-          makeProviderFailure({
-            message: error?.message,
-            code: error == null ? null : String(error.code),
-            class: "provider_error",
+        const idleErrorFailure = (error: EffectAcpSchema.PromptResponse["error"]) => {
+          const requestError = new EffectAcpErrors.AcpRequestError({
+            code: error?.code ?? -32603,
+            errorMessage: error?.message ?? "Provider turn failed.",
+            ...(error?.data === undefined ? {} : { data: error.data }),
           });
+          return (
+            flavor.promptFailure?.(requestError) ??
+            classifyAcpPromptFailure(requestError, {
+              message: error?.message,
+              code: error == null ? null : String(error.code),
+            })
+          );
+        };
 
         const stopReasonFailure = (
           stopReason: EffectAcpSchema.StopReason | null | undefined,
@@ -9658,14 +9864,12 @@ export const makeAcpAdapterV2 = Effect.fn("makeAcpAdapterV2")(function* (
                       unstartedOnly: agentAnswered,
                     });
                   }
+                  const failedAtMs = yield* Clock.currentTimeMillis;
                   yield* finalizeTurn(
                     context,
                     interrupted ? "interrupted" : "failed",
                     flavor.promptFailure?.(failure) ??
-                      makeProviderFailure({
-                        cause: failure,
-                        class: "provider_error",
-                      }),
+                      classifyAcpPromptFailure(failure, { nowMs: failedAtMs }),
                   ).pipe(
                     Effect.andThen(
                       Effect.logWarning("orchestration-v2.acp-prompt-failed", {

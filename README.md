@@ -1,121 +1,184 @@
 <p align="center">
-  <a href="https://t3.codes">
-    <img src="./assets/prod/t3-black-web-icon-192x192.png" width="80" height="80" alt="T3 Code logo" />
-  </a>
+  <img src="./apps/web/public/icon-192x192.png" width="80" height="80" alt="Sovereign mark" />
 </p>
 
-<h1 align="center">T3 Code</h1>
+<h1 align="center">Sovereign</h1>
 
-<p align="center">The open-source control plane for coding agents.</p>
+<p align="center">An open-source, provider-agnostic Commercial Operating System for running governed AI ventures on top of your existing subscriptions.</p>
 
 <p align="center">
-  <a href="https://t3.codes/download"><strong>Download</strong></a> ·
-  <a href="https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824">iOS</a> ·
-  <a href="https://play.google.com/store/apps/details?id=com.t3tools.t3code">Android</a> ·
-  <a href="https://app.t3.codes">Web</a> ·
-  <a href="./docs/README.md">Docs</a> ·
-  <a href="https://discord.gg/jn4EGJjrvv">Discord</a>
+  <a href="./docs/sovereign/quickstart.md"><strong>Quickstart</strong></a> ·
+  <a href="./docs/sovereign/architecture.md">Architecture</a> ·
+  <a href="./docs/sovereign/providers-and-pool.md">Provider Pool</a> ·
+  <a href="./docs/sovereign/ventures.md">Ventures</a> ·
+  <a href="./docs/sovereign/integrations.md">Integrations</a> ·
+  <a href="./docs/sovereign/governance-and-finance.md">Governance & Finance</a> ·
+  <a href="./docs/README.md">All Docs</a>
 </p>
 
-<p align="center">
-  <a href="https://t3.codes">
-    <img src="./.github/readme/hero.webp" width="100%" alt="T3 Code on desktop with a finished Claude thread, next to the phone app asking to approve a command from Codex" />
-  </a>
-</p>
+---
 
-T3 Code runs the coding agents on your machine and gives them one fast interface. Start a thread at your desk, then approve the next step from your phone.
+**Sovereign** turns a local multi-agent runtime into a governed commercial operating system. You connect the AI subscriptions, local models, or developer tools you already pay for, define ventures and natural-language commercial objectives, and let Sovereign plan, score, execute, and track work across software bounties, agencies, voice desks, digital products, micro-SaaS, and custom business models — while keeping **every external action, penny of spend, security scope, and client message behind application-enforced permissions and a GBP-default ledger**.
 
-It works with Claude Code, Codex, Cursor, OpenCode, Grok Build, Antigravity, Kiro, Pi, Muse Code, fx, and any [ACP](./docs/user/providers-acp.md) agent. If an agent is set up on your computer, T3 Code can control it.
+> **Independent project & upstream attribution:** Sovereign is an independent, unofficial project built on the MIT-licensed [T3 Code](https://github.com/pingdotgg/t3code) source code (`Copyright (c) 2026 T3 Tools Inc.`). Sovereign is **not** affiliated with, endorsed by, sponsored by, or maintained by T3 Tools, Inc. See [License & Attribution](#license-and-upstream-attribution) and [TRADEMARK.md](./TRADEMARK.md).
 
-## What you get
+---
 
-- **Your subscriptions.** T3 Code does not resell tokens. It drives the agents you are already signed in to.
-- **Every agent in one place.** Change models in the middle of a thread. Let Claude hand a task to Codex.
-- **Desktop, web, and phone.** One server, and every client shows the same threads. There are apps for iOS and Android.
-- **Remote ready.** Run agents on any machine. Connect over your local network, Tailscale, or [T3 Connect](./docs/user/remote-access.md).
-- **Git built in.** Each thread can work in its own worktree. Review the diff, then commit, push, and open a pull request with one button.
-- **Fast.** Performance is a feature here. We measure it, and we treat a dropped frame as a bug.
-- **Open.** Source code is MIT licensed. If you don't like something, fork it under your own branding (see [Trademarks and forks](#trademarks-and-forks)).
+## Architecture & Relationship to T3 Code
 
-## Install
+Sovereign is built as a **modular commercial layer** on top of T3 Code's local-first Node/Effect WebSocket server, SQLite persistence (`statev2.sqlite`), git worktree orchestration, provider adapters, and web/desktop/mobile clients:
 
-### Desktop app
+- **Wire Contracts ([`packages/contracts/src/sovereign/`](./packages/contracts/src/sovereign/)):** Effect Schemas for ventures, objectives, opportunities, tasks, artifacts, CRM/sales, double-entry ledger entries, governance approvals, provider pool metadata, 36 `sovereign.*` WebSocket RPCs, and 4 granular auth scopes (`sovereign:read`, `sovereign:operate`, `sovereign:approve`, `sovereign:admin`).
+- **Persistence ([`117_sovereign_commercial_os.ts`](./apps/server/src/persistence/Migrations/117_sovereign_commercial_os.ts)):** SQLite Migration 117 adds 21 Sovereign tables without altering upstream Migrations `001..116`. Starts clean with zero fabricated ventures or simulated revenue.
+- **Server Services ([`apps/server/src/sovereign/`](./apps/server/src/sovereign/)):** Typed Effect services (`SovereignStore`, `SovereignGovernanceService`, `SovereignLedgerService`, `SovereignSalesService`, `SovereignIntegrationService`, `SovereignOrchestratorService`, and `VentureWorkflowEngine`), live `sovereign.subscribe` event streaming, HMAC-verified inbound webhooks (`POST /api/sovereign/webhooks/:integrationId`), and a 6-tool least-privilege MCP toolkit ([`apps/server/src/mcp/toolkits/sovereign.ts`](./apps/server/src/mcp/toolkits/sovereign.ts)).
+- **Shared Client Runtime ([`packages/client-runtime/src/sovereign/`](./packages/client-runtime/src/sovereign/)):** Live subscription atoms, permission-gated RPC commands, and Hermes-safe formatters shared across web, desktop, and mobile.
+- **[Overview and venture workspaces](./docs/sovereign/quickstart.md)** — The Overview shows net profit for Today (UTC), the trailing 7 or 30 days, or all time. Open a venture card to continue its linked conversation, or select its sidebar project to review approvals and manage the venture. Hover over **Providers** for subscription usage, or select it to open provider settings.
+- **Floating composer** — Enter a commercial objective with an open-ended horizon and zero discretionary spend. Dictate with the microphone, or select a model and attach files to continue in a standard thread draft. The thread composer handles uploads, model capabilities and final submission.
 
-[Download T3 Code](https://t3.codes/download) for macOS, Windows, or Linux. You can also use a package manager:
+Read the full breakdown in [Architecture](./docs/sovereign/architecture.md).
 
-| Platform       | Command                                                              |
-| -------------- | -------------------------------------------------------------------- |
-| macOS          | `brew install --cask t3-code`                                        |
-| Windows        | `winget install T3Tools.T3Code` or `scoop install extras/t3code`     |
-| Arch Linux     | `yay -S t3code-bin`                                                  |
-| Nix            | `nix profile add github:NixOS/nixpkgs/nixos-unstable#t3code`         |
-| Debian, Ubuntu | `.deb` from [Releases](https://github.com/pingdotgg/t3code/releases) |
+---
 
-### Command line
+## Provider-Agnostic Resource Pool
 
-This installs the `t3` command. Run `t3` to start the server and open the web app.
+Sovereign does not resell tokens or lock you into one vendor. It pools all authenticated local CLIs, managed runtimes, local inference servers, and ACP agents via [`ProviderPoolRouter`](./apps/server/src/provider/ProviderPoolRouter.ts), [`ProviderAvailabilityLedger`](./apps/server/src/provider/ProviderAvailabilityLedger.ts), and [`billingClassifier.ts`](./apps/server/src/provider/billingClassifier.ts):
+
+| Execution Mechanism                      | Drivers                                                                                                                                                      | Billing Classification                                                                                    | Notes                                                                                                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Subscription CLIs / Managed Runtimes** | Codex (`codex`), Claude Code (`claudeAgent`), Antigravity/Gemini (`antigravity`), Cursor (`cursor`), Grok Build (`grok`), Muse Code (`muse`)                 | `subscription` (automatically switches to `metered_api` if API key / Bedrock / Vertex config is detected) | Multi-instance support per driver with priority, concurrency caps, tags, and model tiers (`fast`, `balanced`, `reasoning`, `frontier`). |
+| **Multi-Backend & ACP Agents**           | OpenCode (`opencode`), Kiro (`kiro`), Pi (`pi`), fx (`fx`), ACP Registry (`acpRegistry` — e.g. **GitHub Copilot CLI**, **Devin**, or **Local ACP commands**) | `unknown` by default (`local` for local ACP commands without API keys; `metered_api` if API keys are set) | Conservatively treats `unknown` as metered until explicitly classified by the owner to prevent silent API spend.                        |
+| **Local Models**                         | Any driver pointing at `localhost` / `127.0.0.1` / `*.local` / `OLLAMA_HOST` / `LM_STUDIO_BASE_URL` / `VLLM_BASE_URL`                                        | `local`                                                                                                   | Zero marginal API cost.                                                                                                                 |
+| **Free / Dev Testing**                   | `Replay (dev)` (`devReplay`)                                                                                                                                 | `free`                                                                                                    | Deterministic local ACP transcript replayer registered automatically in `vp run dev`.                                                   |
+| **Web-Only Subscriptions**               | Consumer web-chat plans without an official CLI, SDK, or ACP transport                                                                                       | `manual_only`                                                                                             | Excluded from automated routing; Sovereign never scrapes consumer chat UIs.                                                             |
+
+Key pool guarantees:
+
+- **Never silent paid fallback:** Global and per-venture `paidFallbackMode` defaults to **`deny`**. Paid/metered instances are never used automatically unless you switch to `ask_approval` (queues a high-risk approval request) or `allow` (enforces `maxEstimatedCostMinor`).
+- **Honest quota reporting:** If a provider does not expose live quota telemetry, Sovereign reports `Unavailable` (`quotaRemainingPct: null`) instead of inventing percentages.
+- **Rate-limit cooldown & safe reassignment:** Rate-limited instances enter cooldown (`resetAt` or bounded 30s–15m exponential backoff) and [`UsageLimitRecoveryWorker`](./apps/server/src/orchestration-v2/UsageLimitRecoveryWorker.ts) reassigns work only to healthy peers in the **same or cheaper** billing class.
+
+See [Providers and Resource Pool](./docs/sovereign/providers-and-pool.md).
+
+---
+
+## Business Ventures (7 Initial + Dynamic Expansion)
+
+Sovereign ships with 7 structured venture blueprints ([`SovereignBlueprints.ts`](./apps/server/src/sovereign/SovereignBlueprints.ts), [`VentureWorkflowEngine.ts`](./apps/server/src/sovereign/ventures/VentureWorkflowEngine.ts)) and supports creating arbitrary new ventures dynamically at runtime without code changes:
+
+1. **Development Bounties (`dev_bounties`):** Discovers funded GitHub issues, checks `CONTRIBUTING.md` AI-contribution rules (disqualifying prohibited repos), detects competing PRs, builds test-verified patches in isolated worktrees, and gates external PR submission.
+2. **Authorised Security Bug Bounties (`security_bounties`):** Strictly separate from dev bounties. Hard-locked (`security_testing: "deny"`, `authorised: false`) until the owner records explicit programme authorisation, `targetScope`, `permittedMethods`, and expiry.
+3. **Website & Software Agency (`web_agency`):** SSRF-safe prospect website audits, personalised demos/proposals with quote & discount caps, UK PECR/GDPR consent-verified outreach, staging previews, approval-gated deployments, and invoicing.
+4. **Voice AI & Customer Support (`voice_ai`):** Vendor-agnostic voice receptionists/support agents across Vapi, Retell AI, ElevenLabs, and Twilio with mandatory AI identity greeting, recording disclosure, opt-out/escalation paths, and explicit per-minute telephony cost logging.
+5. **Paid Tasks & Online Work (`paid_tasks`):** Partitions tasks strictly into AI-permitted, assisted-review, human-required, and ineligible queues. Zero human impersonation or verification bypassing.
+6. **Digital Products (`digital_products`):** Demand-validation gate before asset production, packaging, approval-gated storefront listing (Gumroad, Lemon Squeezy, Stripe, Paddle), and fee reconciliation.
+7. **Micro-SaaS Studio (`micro_saas`):** Willingness-to-pay validation gate, lean engineering pipeline, approval-gated deployments/billing changes, and verified MRR/hosting/unit-economics tracking.
+8. **Dynamic Custom Ventures (`custom`):** Propose and instantiate new business models from commercial objectives via [`customVenture.ts`](./apps/server/src/sovereign/ventures/customVenture.ts) or the **New Venture** dialog with custom UI modules and conservative default guardrails.
+
+See [Ventures](./docs/sovereign/ventures.md).
+
+---
+
+## Installation & Quickstart
+
+### Prerequisites
+
+- **Git** (on Windows, clone with `git clone -c core.longpaths=true ...`)
+- **[Vite+](https://viteplus.dev/guide/) (`vp`)** — manages the pinned Node.js version:
 
 ```bash
-curl -fsSL https://t3.codes/install.sh | sh
+# macOS / Linux
+curl -fsSL https://vite.plus | bash
 ```
-
-On Windows, in PowerShell:
 
 ```powershell
-irm https://t3.codes/install.ps1 | iex
+# Windows (PowerShell)
+irm https://vite.plus/ps1 | iex
 ```
 
-To try it once without an install, run `npx t3@latest`.
+### Run locally
 
-### Phone
+```bash
+vp i
+cp .env.example .env   # optional local overrides (keep SOVEREIGN_HOME isolated)
+vp run dev
+```
 
-Get the app from the [App Store](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824) or [Google Play](https://play.google.com/store/apps/details?id=com.t3tools.t3code). Then follow [remote access](./docs/user/remote-access.md) to connect it to your computer.
+Open the `pairingUrl:` printed in your terminal. To launch the Electron desktop wrapper instead:
 
-### Sign in to an agent
+```bash
+vp run dev:desktop
+```
 
-T3 Code needs one agent that is installed and signed in. For example, install [Claude Code](https://claude.com/product/claude-code) and run `claude auth login`, or install [Codex CLI](https://developers.openai.com/codex/cli) and run `codex login`.
+To isolate Sovereign's database and secrets from any existing T3 Code installation, set `SOVEREIGN_HOME` (for example, `SOVEREIGN_HOME=~/.sovereign`). Never point a dev server at a live `~/.t3/userdata` directory.
 
-[Provider setup](./docs/user/install.md#providers) has the steps for each agent. [Install T3 Code](./docs/user/install.md) covers nightly builds, AppImage, WSL, and NixOS.
+See [Quickstart](./docs/sovereign/quickstart.md) and [Install](./docs/user/install.md).
 
-## "Wait, what are you selling me?"
+---
 
-Nothing. We built T3 Code because we wanted the best possible development experience with agents. We were inspired by existing solutions like the Codex desktop app, Conductor, Claude Desktop and Cursor Glass, but none met our bar.
+## Configuring AI Subscriptions & Commercial Integrations
 
-We wanted something performant, remote-ready, and truly open. If we ever go the wrong direction, we want you to have everything you need to fork the source code and build the tool that you want, under your own name and branding.
+### AI Providers
 
-## Documentation
+Authenticate your chosen CLIs on the host machine (`claude auth login`, `codex login`, `agent login`, `grok login`, `opencode auth login`, `kiro-cli login`, etc.), then enable instances and set billing classes/priorities in **Settings → Providers**.
 
-- [Install and first run](./docs/user/install.md)
-- [Remote access from a phone or another machine](./docs/user/remote-access.md)
-- [Permission modes](./docs/user/permission-modes.md)
-- [Source control](./docs/user/source-control.md)
-- [Connect outside agents over MCP](./docs/user/outside-agents.md)
-- [FAQ](./docs/user/faq.md)
+### External Commercial Integrations
 
-[All docs](./docs/README.md) has the full list.
+Configure credentials in **Settings → Integrations** (`/settings/sovereign-integrations`):
 
-## Contributing
+- **Payments:** Stripe, Paddle, Lemon Squeezy (constant-time HMAC webhook verification + replay deduplication → verified GBP ledger reconciliation)
+- **Email:** Resend, SMTP (enforces AI identity disclosure + UK PECR/GDPR consent/opt-out)
+- **Voice & Telephony:** Vapi, Retell AI, ElevenLabs, Twilio
+- **Source Control & Hosting / Storefronts:** GitHub, Vercel, Cloudflare, Gumroad, plus generic HMAC webhooks
 
-We have limited review capacity. Small, focused fixes are the most likely to be merged. Features need an approved discussion first.
+All credentials are stored in server-side `ServerSecretStore` (`0o600`) or an external vault `SecretReference` — never returned in plaintext over RPC or exposed to agents via MCP. See [Integrations](./docs/sovereign/integrations.md).
 
-- Read [CONTRIBUTING.md](./CONTRIBUTING.md) before you report a bug or open a pull request.
-- Put feature requests in [Ideas](https://github.com/pingdotgg/t3code/discussions/categories/ideas).
-- Build from source with the [development runbook](./docs/operations/00_development.md#first-checkout). The [architecture overview](./docs/internals/01_architecture.md) explains how it works.
-- Get help in [Discord](https://discord.gg/jn4EGJjrvv).
+---
 
-## License
+## Governance, Emergency Stop & Financial Controls
 
-The source code in this repository is licensed under the [MIT License](./LICENSE).
+- **13 gated action categories:** External communications, submissions, deployments, expenditures, payments, contracts, refunds, personal data, and new venture creation default to `require_approval`; `security_testing` and `paid_provider_fallback` default to `deny`.
+- **Global Emergency Stop:** Persisted in SQLite (`sovereign_control_state`), immediately pauses all active tasks, and blocks all external actions and approvals until explicitly cleared.
+- **Prompt-injection quarantine:** Untrusted external inputs (issues, web pages, programme policies) are scanned and sanitized before orchestration; all enforcement lives in server-side Effect services, not prompts.
+- **GBP-default ledger & £0.00 default budget:** Both global and per-venture monthly spend caps default to `£0.00` (`discretionarySpendAllowed: false`). Verified ledger totals are strictly isolated from pipeline estimates, pending reconciliation, and `[Simulated]` fixtures.
 
-## Trademarks and forks
+See [Governance and Finance](./docs/sovereign/governance-and-finance.md).
 
-The MIT license applies **only to the source code**. It does not grant any rights to T3 Tools, Inc.'s trademarks, branding, or trade dress, including the **T3 Code** name, wordmark, logos, and application icons.
+---
 
-If you fork, redistribute, or build on T3 Code's source code:
+## Runtime Operation, Recovery & Testing
 
-- **Use your own branding.** Replace the T3 Code name, wordmark, logos, and application icons in any public fork, redistributed build, website, package, or app store listing.
-- **Be explicitly clear that your project is unofficial.** Do not use the T3 Code name, wordmark, logo, or branding in your own projects without making it unmistakably clear that your project is unofficial and not affiliated with or endorsed by T3 Tools, Inc.
+- **Background daemon:** Run headless with `t3 serve` or install as a user service (`t3 service install` / `status` / `restart` / `uninstall`) using `systemd` (Linux), `launchd` (macOS), or Task Scheduler (Windows).
+- **Crash recovery:** On every boot, `SovereignRuntimeLayer.layerStartupRecovery` recovers interrupted `running`/`queued` tasks with preserved checkpoints and retry budgets while enforcing idempotency keys across tasks, opportunities, approvals, ledger entries, and webhooks.
+- **Offline verification:** Run deterministic Sovereign tests without paid APIs:
 
-Using our name, wordmark, logo, or branding in a way that suggests official status or affiliation is trademark infringement and unlawful. **Any project indicating or implying that it is an official version of T3 Code when it is not will be pursued to the full extent of the law.**
+```bash
+vp test run \
+  packages/contracts/src/sovereign/sovereign.test.ts \
+  packages/client-runtime/src/sovereign/sovereign.test.ts \
+  apps/server/src/provider/billingClassifier.test.ts \
+  apps/server/src/provider/ProviderPoolRouter.test.ts \
+  apps/server/src/sovereign/SovereignCore.test.ts \
+  apps/server/src/sovereign/integrations/IntegrationsHub.test.ts \
+  apps/server/src/sovereign/ventures/VentureWorkflowEngine.test.ts \
+  apps/web/src/sovereign/sovereignUi.test.ts
+```
 
-See [TRADEMARK.md](./TRADEMARK.md) for the full trademark and branding policy.
+See [Operations and Reliability](./docs/sovereign/operations-and-reliability.md).
+
+---
+
+## Known Limitations & External Requirements
+
+- **User-supplied credentials required:** All 13 commercial integration drivers and HMAC webhook verifiers are tested offline against deterministic mock transports. Live commercial operations require your own accounts, API keys, webhook signing secrets, and (for inbound webhooks) a publicly reachable HTTPS endpoint.
+- **No hosted Sovereign cloud or store binaries:** Sovereign does not connect to T3 Tools' hosted `relay.t3.codes`, `app.t3.codes`, or Clerk instances. Build and run locally or operate your own relay.
+- **Web-only AI plans are manual-only:** Subscriptions without a CLI, SDK, or ACP interface cannot be automated.
+- **Provider quota telemetry varies:** Providers that do not report live usage windows display `Unavailable` rather than fabricated estimates.
+- **External marginal costs apply to telephony and hosting:** Voice AI minutes, cloud hosting, domains, and payment processing carry real third-party vendor fees.
+
+---
+
+## License and Upstream Attribution
+
+- **Source code license:** MIT License — see [LICENSE](./LICENSE).
+- **Upstream attribution:** Sovereign is derived from **T3 Code** (`Copyright (c) 2026 T3 Tools Inc.`, MIT License, [github.com/pingdotgg/t3code](https://github.com/pingdotgg/t3code)) and its original contributors.
+- **Non-affiliation:** Sovereign is an independent, unofficial project and is **not** affiliated with, endorsed by, sponsored by, or maintained by T3 Tools, Inc. All T3 Code trademarks, logos, wordmarks, domains, and store listings remain the property of T3 Tools, Inc. See [TRADEMARK.md](./TRADEMARK.md).

@@ -2,8 +2,11 @@ import { CommandId, MessageId, type OrchestrationV2Command } from "@t3tools/cont
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Stream from "effect/Stream";
 import type { OrchestrationV2DomainEvent } from "@t3tools/contracts";
+import * as ProviderAvailabilityLedger from "../provider/ProviderAvailabilityLedger.ts";
+import * as ProviderPoolRouter from "../provider/ProviderPoolRouter.ts";
 import * as DueHint from "../scheduling/DueHint.ts";
 import * as Scheduler from "../scheduling/Scheduler.ts";
 import { forkParked } from "../serverActivation.ts";
@@ -13,6 +16,51 @@ import * as Orchestrator from "./Orchestrator.ts";
 import * as ThreadManagement from "./ThreadManagementService.ts";
 
 export const MAX_OVERDUE_ARM_MS = 24 * 60 * 60 * 1000;
+const MAX_TRACKED_LIMIT_KEYS = 1024;
+
+function rememberBoundedKey(set: Set<string>, key: string): void {
+  if (set.size >= MAX_TRACKED_LIMIT_KEYS) {
+    const oldest = set.values().next().value;
+    if (oldest !== undefined) set.delete(oldest);
+  }
+  set.add(key);
+}
+
+function limitReassignmentCommands(
+  thread: Pick<ProjectionStore.ProjectionLimitRecoveryCandidate, "id" | "latestRunId">,
+  target: ProviderPoolRouter.ProviderReassignmentTarget,
+):
+  | readonly [
+      Extract<OrchestrationV2Command, { readonly type: "provider.switch" }>,
+      Extract<OrchestrationV2Command, { readonly type: "message.dispatch" }>,
+    ]
+  | null {
+  if (!thread.latestRunId) return null;
+  const identity = `${thread.id}:${thread.latestRunId}:${target.instanceId}`;
+  return [
+    {
+      type: "provider.switch",
+      commandId: CommandId.make(`limit-reassign-switch:${identity}`),
+      threadId: thread.id,
+      modelSelection: {
+        instanceId: target.instanceId,
+        model: target.model,
+      },
+    },
+    {
+      type: "message.dispatch",
+      commandId: CommandId.make(`limit-reassign-resume:${identity}`),
+      messageId: MessageId.make(`limit-reassign-resume:${identity}`),
+      threadId: thread.id,
+      usageLimitContinuationOfRunId: thread.latestRunId,
+      text: "Continue where you left off.",
+      attachments: [],
+      dispatchMode: { type: "start_immediately" },
+      createdBy: "agent",
+      creationSource: "server",
+    },
+  ];
+}
 
 export function limitRecoveryCommand(
   thread: ProjectionStore.ProjectionLimitRecoveryCandidate,
@@ -92,6 +140,12 @@ const makeSweep = Effect.gen(function* () {
   const threads = yield* ThreadManagement.ThreadManagementService;
   const orchestrator = yield* Orchestrator.OrchestratorV2;
   const settings = yield* ServerSettings.ServerSettingsService;
+  const availabilityLedgerOption = yield* Effect.serviceOption(
+    ProviderAvailabilityLedger.ProviderAvailabilityLedger,
+  );
+  const poolRouterOption = yield* Effect.serviceOption(ProviderPoolRouter.ProviderPoolRouter);
+  const recordedLimitKeys = new Set<string>();
+  const reassignedLimitKeys = new Set<string>();
   const due = DueHint.make();
   yield* forkParked(
     Stream.runForEach(orchestrator.streamDomainEvents, (event) =>
@@ -112,6 +166,79 @@ const makeSweep = Effect.gen(function* () {
     });
     let acted = false;
     for (const thread of candidates) {
+      if (
+        thread.status === "failed" &&
+        thread.lastErrorClass === "usage_limit" &&
+        thread.latestRunId !== null &&
+        (Option.isSome(availabilityLedgerOption) || Option.isSome(poolRouterOption))
+      ) {
+        const limitKey = `${thread.id}:${thread.latestRunId}`;
+        const appThread =
+          typeof projections.findThread === "function"
+            ? yield* projections
+                .findThread(thread.id)
+                .pipe(Effect.catchCause(() => Effect.succeed(null)))
+            : null;
+        const failedInstanceId =
+          appThread?.modelSelection.instanceId ?? appThread?.providerInstanceId ?? null;
+        const parsedResetMs =
+          thread.usageLimitResetAt != null ? Date.parse(thread.usageLimitResetAt) : NaN;
+        const resetAtMs =
+          Number.isFinite(parsedResetMs) && parsedResetMs > nowMs ? parsedResetMs : null;
+
+        if (
+          failedInstanceId !== null &&
+          Option.isSome(availabilityLedgerOption) &&
+          !recordedLimitKeys.has(limitKey)
+        ) {
+          rememberBoundedKey(recordedLimitKeys, limitKey);
+          yield* availabilityLedgerOption.value.recordRateLimit(
+            failedInstanceId,
+            resetAtMs,
+            "Provider reported usage limit",
+          );
+        }
+
+        const canAttemptReassignment =
+          failedInstanceId !== null &&
+          Option.isSome(poolRouterOption) &&
+          preferences.autoResumeLimitedThreads &&
+          thread.archivedAt === null &&
+          thread.settledOverride !== "settled" &&
+          thread.pendingRuntimeRequest === null &&
+          thread.limitRecovery?.runId !== thread.latestRunId &&
+          !reassignedLimitKeys.has(limitKey) &&
+          (thread.usageLimitResetAt === null || resetAtMs !== null);
+
+        if (canAttemptReassignment && Option.isSome(poolRouterOption)) {
+          const target = yield* poolRouterOption.value
+            .selectReassignmentTarget(failedInstanceId)
+            .pipe(Effect.catchCause(() => Effect.succeed(null)));
+          const reassignment = target === null ? null : limitReassignmentCommands(thread, target);
+          if (reassignment !== null) {
+            const [switchCommand, resumeCommand] = reassignment;
+            const reassigned = yield* Effect.gen(function* () {
+              yield* threads.dispatch(switchCommand);
+              yield* threads.dispatch(resumeCommand);
+              return true;
+            }).pipe(
+              Effect.catchCause((cause) =>
+                Effect.logWarning("orchestration-v2.limit-recovery.reassignment-failed", {
+                  threadId: thread.id,
+                  targetInstanceId: target?.instanceId ?? null,
+                  cause,
+                }).pipe(Effect.as(false)),
+              ),
+            );
+            if (reassigned) {
+              rememberBoundedKey(reassignedLimitKeys, limitKey);
+              acted = true;
+              continue;
+            }
+          }
+        }
+      }
+
       const command = limitRecoveryCommand(
         thread,
         preferences.autoResumeLimitedThreads,

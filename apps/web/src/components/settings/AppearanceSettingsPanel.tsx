@@ -8,6 +8,7 @@ import {
   type HtmlPreviewWidth,
   type EffortDisplay,
   type EnvironmentIdentificationMode,
+  type SovereignAtmosphere,
   MAX_APPEARANCE_CONTRAST,
   MAX_GLASS_OPACITY,
   MAX_PANEL_ANIMATION_DURATION_MS,
@@ -90,6 +91,12 @@ const HTML_PREVIEW_WIDTH_LABELS: Record<HtmlPreviewWidth, string> = {
 const EFFORT_DISPLAY_LABELS: Record<EffortDisplay, string> = {
   label: msg("Word", { $context: "show effort as a word" }),
   bars: msg("Bars", { $context: "show effort as bars" }),
+};
+
+const SOVEREIGN_ATMOSPHERE_LABELS: Record<SovereignAtmosphere, string> = {
+  ambient: msg("Ambient"),
+  subtle: msg("Subtle"),
+  off: msg("Off"),
 };
 
 export function AppearanceSettingsPanel() {
@@ -175,6 +182,52 @@ export function AppearanceSettingsPanel() {
       </SettingsSection>
 
       <SettingsSection id="appearance-interface" title={gt("Interface")}>
+        <SettingsRow
+          {...searchableSetting("sovereign-atmosphere")}
+          description={gt(
+            "Adjust the architectural light field and meridian grid on Sovereign views.",
+          )}
+          resetAction={
+            settings.sovereignAtmosphere !== DEFAULT_UNIFIED_SETTINGS.sovereignAtmosphere ? (
+              <SettingResetButton
+                ariaLabel={gt("Reset Sovereign atmosphere to default")}
+                onClick={() =>
+                  updateSettings({
+                    sovereignAtmosphere: DEFAULT_UNIFIED_SETTINGS.sovereignAtmosphere,
+                  })
+                }
+              />
+            ) : null
+          }
+          control={
+            <div className="w-full sm:w-40">
+              <Select
+                value={settings.sovereignAtmosphere}
+                onValueChange={(value) => {
+                  if (value === "ambient" || value === "subtle" || value === "off") {
+                    updateSettings({ sovereignAtmosphere: value });
+                  }
+                }}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="w-full min-w-0"
+                  aria-label={gt("Sovereign atmosphere")}
+                >
+                  <SelectValue>
+                    {m(SOVEREIGN_ATMOSPHERE_LABELS[settings.sovereignAtmosphere])}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectPopup align="end" alignItemWithTrigger={false}>
+                  <SelectItem value="ambient">{gt("Ambient (default)")}</SelectItem>
+                  <SelectItem value="subtle">{m(SOVEREIGN_ATMOSPHERE_LABELS.subtle)}</SelectItem>
+                  <SelectItem value="off">{m(SOVEREIGN_ATMOSPHERE_LABELS.off)}</SelectItem>
+                </SelectPopup>
+              </Select>
+            </div>
+          }
+        />
+
         <SettingsRow
           {...searchableSetting("setting-appearance-contrast")}
           description={gt("Adjust the contrast of colors and borders across the interface.")}

@@ -3,6 +3,7 @@ import * as Schema from "effect/Schema";
 import * as SchemaTransformation from "effect/SchemaTransformation";
 import { TrimmedNonEmptyString } from "./baseSchemas.ts";
 import { SecretReference } from "./secretReference.ts";
+import { ProviderPoolMetadata } from "./sovereign/providerPoolMetadata.ts";
 
 const PROVIDER_SLUG_MAX_CHARS = 64;
 const PROVIDER_SLUG_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
@@ -79,8 +80,20 @@ export const ProviderInstanceConfig = Schema.Struct({
   environment: Schema.optionalKey(ProviderInstanceEnvironment),
   enabled: Schema.optionalKey(Schema.Boolean),
   config: Schema.optionalKey(Schema.Unknown),
+  pool: Schema.optionalKey(ProviderPoolMetadata),
 });
 export type ProviderInstanceConfig = typeof ProviderInstanceConfig.Type;
+
+export const ServerUpsertProviderInstanceInput = Schema.Struct({
+  instanceId: ProviderInstanceId,
+  instance: ProviderInstanceConfig,
+});
+export type ServerUpsertProviderInstanceInput = typeof ServerUpsertProviderInstanceInput.Type;
+
+export const ServerRemoveProviderInstanceInput = Schema.Struct({
+  instanceId: ProviderInstanceId,
+});
+export type ServerRemoveProviderInstanceInput = typeof ServerRemoveProviderInstanceInput.Type;
 
 export const ProviderInstanceMutation = Schema.Union([
   Schema.Struct({

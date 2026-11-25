@@ -18,6 +18,10 @@
     "./relay": {
       "types": "./src/relay.ts",
       "import": "./src/relay.ts"
+    },
+    "./sovereign": {
+      "types": "./src/sovereign/index.ts",
+      "import": "./src/sovereign/index.ts"
     }
   },
   "scripts": {

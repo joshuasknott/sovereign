@@ -37,6 +37,9 @@ export type SettingsPath =
   | "/settings/connections"
   | "/settings/access"
   | "/settings/secrets"
+  | "/settings/sovereign-integrations"
+  | "/settings/governance"
+  | "/settings/budgets"
   | "/settings/maintenance"
   | "/settings/labs"
   | "/settings/about"
@@ -115,6 +118,9 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/connections": msg("Environments"),
   "/settings/access": msg("Sharing & access"),
   "/settings/secrets": msg("Secrets"),
+  "/settings/sovereign-integrations": msg("Integrations"),
+  "/settings/governance": msg("Governance & Safety"),
+  "/settings/budgets": msg("Budgets & Currency"),
   "/settings/maintenance": msg("Maintenance"),
   "/settings/labs": msg("Labs"),
   "/settings/about": msg("About"),
@@ -151,6 +157,10 @@ const ALL_SETTINGS_NAV_GROUPS: ReadonlyArray<SettingsNavGroup> = [
       "/settings/voice",
       "/settings/snap-shot",
     ],
+  },
+  {
+    heading: msg("Sovereign"),
+    paths: ["/settings/governance", "/settings/budgets", "/settings/sovereign-integrations"],
   },
   {
     heading: msg("Agents"),
@@ -351,6 +361,44 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/appearance",
     searchTerms: [msg("appearance colors palette custom import")],
     targetId: "appearance",
+  },
+  {
+    id: "sovereign-atmosphere",
+    title: msg("Sovereign atmosphere"),
+    to: "/settings/appearance",
+    searchTerms: [msg("ambient subtle off meridian grid background glow")],
+  },
+  {
+    id: "sovereign-provider-pool",
+    title: msg("Sovereign Provider Pool"),
+    to: "/settings/providers",
+    searchTerms: [
+      msg("billing class subscription local free paid api fallback priority concurrency quota"),
+    ],
+  },
+  {
+    id: "sovereign-integrations",
+    title: msg("Commercial integrations"),
+    to: "/settings/sovereign-integrations",
+    searchTerms: [
+      msg(
+        "stripe paddle resend smtp vapi retell elevenlabs twilio github vercel cloudflare gumroad webhook",
+      ),
+    ],
+  },
+  {
+    id: "sovereign-governance",
+    title: msg("Governance and emergency stop"),
+    to: "/settings/governance",
+    searchTerms: [
+      msg("emergency stop halt approvals preapproval policy prompt injection guard audit log"),
+    ],
+  },
+  {
+    id: "sovereign-budgets",
+    title: msg("Budgets and reporting currency"),
+    to: "/settings/budgets",
+    searchTerms: [msg("gbp currency spend cap discretionary budget fx rates ledger")],
   },
   {
     // Prefixed because the slider control already owns the `appearance-contrast` id.
@@ -1550,6 +1598,9 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/connections": "connections",
   "/settings/access": "connections",
   "/settings/secrets": null,
+  "/settings/sovereign-integrations": null,
+  "/settings/governance": null,
+  "/settings/budgets": null,
   "/settings/scheduled-tasks": null,
   "/settings/maintenance": null,
   "/settings/labs": null,

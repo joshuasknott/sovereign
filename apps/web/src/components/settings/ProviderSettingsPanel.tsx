@@ -103,6 +103,7 @@ import { IntervalSecondsField } from "./IntervalSecondsField";
 import { ProviderInstanceCard } from "./ProviderInstanceCard";
 import { useSecretSources } from "./SecretSourceInput";
 import { TextGeneratorsSettings } from "./TextGeneratorsSettings";
+import { SovereignProviderPoolSection } from "./SovereignProviderPoolSection";
 import { UsageProviderSettings } from "./UsageProviderSettings";
 import { ProviderSetupSection, readAntigravityAuthMethod } from "./ProviderSetupSection";
 import { ProviderAuthenticationSection } from "./ProviderAuthenticationSection";
@@ -1150,6 +1151,12 @@ export function EnvironmentProviderSettings({
         environmentId={environmentId}
         environmentLabel={environmentLabel}
         sources={settings.usageLimitSources}
+        readOnly={readOnly}
+      />
+
+      <SovereignProviderPoolSection
+        key={`sovereign-pool:${environmentId}`}
+        environmentId={environmentId}
         readOnly={readOnly}
       />
 

@@ -22,6 +22,7 @@ import { cn } from "../../../../lib/cn";
 import { useAppearancePreferences } from "../AppearancePreferencesProvider";
 
 const THEME_NAMES: Readonly<Record<string, string>> = {
+  "t3-code": msg("Classic", { $context: "color theme name" }),
   grove: msg("Grove", { $context: "color theme name" }),
   ocean: msg("Ocean", { $context: "color theme name" }),
   ember: msg("Ember", { $context: "color theme name" }),

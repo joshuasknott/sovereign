@@ -306,6 +306,12 @@ import * as AgentSessionScanner from "./project/AgentSessionScanner.ts";
 import * as AgentSessionImporter from "./project/AgentSessionImporter.ts";
 import * as UsageLimitSources from "./usage/UsageLimitSources.ts";
 import { requestUrl } from "./requestUrl.ts";
+import * as SovereignGovernanceService from "./sovereign/SovereignGovernanceService.ts";
+import * as SovereignIntegrationService from "./sovereign/SovereignIntegrationService.ts";
+import * as SovereignLedgerService from "./sovereign/SovereignLedgerService.ts";
+import * as SovereignOrchestratorService from "./sovereign/SovereignOrchestratorService.ts";
+import * as SovereignSalesService from "./sovereign/SovereignSalesService.ts";
+import * as SovereignWsHandlers from "./sovereign/SovereignWsHandlers.ts";
 
 const CONFIG_DISCOVERY_TIMEOUT = Duration.seconds(5);
 const isProviderUploadFeedbackError = Schema.is(ProviderUploadFeedbackError);
@@ -751,12 +757,17 @@ type SplitWsRpc = Extract<
   ServerWsRpc,
   { readonly _tag: `${(typeof SPLIT_WS_RPC_PREFIXES)[number]}.${string}` }
 >;
+type SovereignWsRpc = Extract<ServerWsRpc, { readonly _tag: `sovereign.${string}` }>;
+type OtherWsRpc = Exclude<ServerWsRpc, SplitWsRpc | SovereignWsRpc>;
 const isSplitWsRpc = (rpc: ServerWsRpc): rpc is SplitWsRpc =>
   SPLIT_WS_RPC_PREFIXES.some((prefix) => rpc._tag.startsWith(`${prefix}.`));
-const isOtherWsRpc = (rpc: ServerWsRpc): rpc is Exclude<ServerWsRpc, SplitWsRpc> =>
-  !isSplitWsRpc(rpc);
+const isSovereignWsRpc = (rpc: ServerWsRpc): rpc is SovereignWsRpc =>
+  rpc._tag.startsWith("sovereign.");
+const isOtherWsRpc = (rpc: ServerWsRpc): rpc is OtherWsRpc =>
+  !isSplitWsRpc(rpc) && !isSovereignWsRpc(rpc);
 const serverWsRpcs = Array.from(ServerWsRpcGroup.requests.values());
 const SplitWsRpcGroup = RpcGroup.make(...serverWsRpcs.filter(isSplitWsRpc));
+const SovereignWsRpcGroup = RpcGroup.make(...serverWsRpcs.filter(isSovereignWsRpc));
 const OtherWsRpcGroup = RpcGroup.make(...serverWsRpcs.filter(isOtherWsRpc));
 function toAuthAccessStreamEvent(
   change: Exclude<
@@ -1598,6 +1609,19 @@ export const layerWsRpc = (
       const peerClientPairing = yield* PeerClientPairing.PeerClientPairing;
       const startup = yield* ServerRuntimeStartup.ServerRuntimeStartup;
       const workspaceEntries = yield* WorkspaceEntries.WorkspaceEntries;
+      const sovereignServices: SovereignWsHandlers.OptionalSovereignServices = {
+        orchestrator: yield* Effect.serviceOption(
+          SovereignOrchestratorService.SovereignOrchestratorService,
+        ),
+        governance: yield* Effect.serviceOption(
+          SovereignGovernanceService.SovereignGovernanceService,
+        ),
+        ledger: yield* Effect.serviceOption(SovereignLedgerService.SovereignLedgerService),
+        sales: yield* Effect.serviceOption(SovereignSalesService.SovereignSalesService),
+        integrations: yield* Effect.serviceOption(
+          SovereignIntegrationService.SovereignIntegrationService,
+        ),
+      };
       const workspaceFolders = yield* WorkspaceFolders.WorkspaceFolders;
       const taskFolders = yield* TaskFolders.TaskFolders;
       const layoutCommandApprovalWrites =
@@ -2846,6 +2870,10 @@ export const layerWsRpc = (
               : serverSettings.updateProviderInstance(providerInstanceMutation, nextPatch);
             return ServerSettings.redactServerSettingsForClient(settings, settingsClient);
           }),
+        [WS_METHODS.serverUpsertProviderInstance]: (input) =>
+          SovereignWsHandlers.handleUpsertProviderInstance(serverSettings, settingsClient, input),
+        [WS_METHODS.serverRemoveProviderInstance]: (input) =>
+          SovereignWsHandlers.handleRemoveProviderInstance(serverSettings, settingsClient, input),
         [WS_METHODS.serverDiscoverSourceControl]: (_input) => sourceControlDiscovery.discover,
         [WS_METHODS.serverCheckSecretSource]: (input) => secretCheck.check(input.source),
         [WS_METHODS.serverGetTraceDiagnostics]: (_input) =>
@@ -3765,12 +3793,16 @@ export const layerWsRpc = (
               Stream.concat(Stream.make(latest), changes),
             ),
           ),
+        ...SovereignWsHandlers.makeSovereignRpcHandlers(sovereignServices),
       });
       const splitHandlers: Pick<typeof handlers, SplitWsRpc["_tag"]> = handlers;
-      const otherHandlers: Pick<typeof handlers, Exclude<ServerWsRpc, SplitWsRpc>["_tag"]> =
-        handlers;
+      const sovereignHandlers: Pick<typeof handlers, SovereignWsRpc["_tag"]> = handlers;
+      const otherHandlers: Pick<typeof handlers, OtherWsRpc["_tag"]> = handlers;
       return Context.merge(
-        yield* SplitWsRpcGroup.toHandlers(splitHandlers),
+        Context.merge(
+          yield* SplitWsRpcGroup.toHandlers(splitHandlers),
+          yield* SovereignWsRpcGroup.toHandlers(sovereignHandlers),
+        ),
         yield* OtherWsRpcGroup.toHandlers(otherHandlers),
       );
     }),
@@ -3798,6 +3830,44 @@ export const layer = Layer.unwrap(
     const peerThreadRelay = yield* PeerThreadRelay.PeerThreadRelay;
     const peerClientPairing = yield* PeerClientPairing.PeerClientPairing;
     const sql = yield* SqlClient.SqlClient;
+    const sovereignOrchestrator = yield* Effect.serviceOption(
+      SovereignOrchestratorService.SovereignOrchestratorService,
+    );
+    const sovereignGovernance = yield* Effect.serviceOption(
+      SovereignGovernanceService.SovereignGovernanceService,
+    );
+    const sovereignLedger = yield* Effect.serviceOption(
+      SovereignLedgerService.SovereignLedgerService,
+    );
+    const sovereignSales = yield* Effect.serviceOption(SovereignSalesService.SovereignSalesService);
+    const sovereignIntegrations = yield* Effect.serviceOption(
+      SovereignIntegrationService.SovereignIntegrationService,
+    );
+    const layerSovereignContext = Layer.mergeAll(
+      Option.match(sovereignOrchestrator, {
+        onNone: () => Layer.empty,
+        onSome: (service) =>
+          Layer.succeed(SovereignOrchestratorService.SovereignOrchestratorService, service),
+      }),
+      Option.match(sovereignGovernance, {
+        onNone: () => Layer.empty,
+        onSome: (service) =>
+          Layer.succeed(SovereignGovernanceService.SovereignGovernanceService, service),
+      }),
+      Option.match(sovereignLedger, {
+        onNone: () => Layer.empty,
+        onSome: (service) => Layer.succeed(SovereignLedgerService.SovereignLedgerService, service),
+      }),
+      Option.match(sovereignSales, {
+        onNone: () => Layer.empty,
+        onSome: (service) => Layer.succeed(SovereignSalesService.SovereignSalesService, service),
+      }),
+      Option.match(sovereignIntegrations, {
+        onNone: () => Layer.empty,
+        onSome: (service) =>
+          Layer.succeed(SovereignIntegrationService.SovereignIntegrationService, service),
+      }),
+    );
     return HttpRouter.add(
       "GET",
       "/ws",
@@ -3905,6 +3975,7 @@ export const layer = Layer.unwrap(
               Layer.provide(Layer.succeed(PeerLinkRequests.PeerLinkRequests, peerLinkRequests)),
               Layer.provide(Layer.succeed(PeerThreadRelay.PeerThreadRelay, peerThreadRelay)),
               Layer.provide(Layer.succeed(PeerClientPairing.PeerClientPairing, peerClientPairing)),
+              Layer.provide(layerSovereignContext),
               Layer.provide(
                 SourceControlDiscovery.layer.pipe(
                   Layer.provide(

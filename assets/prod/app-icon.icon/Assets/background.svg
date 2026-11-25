@@ -1,0 +1,27 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="6" x2="110" y2="124" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#191C24"/>
+      <stop offset="0.52" stop-color="#101218"/>
+      <stop offset="1" stop-color="#090A0D"/>
+    </linearGradient>
+    <radialGradient id="topSheen" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(42 16) rotate(58) scale(92 84)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.09"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.02"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="accentAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(94 102) rotate(-135) scale(76 72)">
+      <stop stop-color="#C8A97E" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#C8A97E" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="frame">
+      <rect width="128" height="128" rx="10"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="128" height="128" fill="url(#bg)"/>
+    <rect width="128" height="128" fill="url(#topSheen)"/>
+    <rect width="128" height="128" fill="url(#accentAura)"/>
+    <path d="M16 112L112 16" stroke="#C8A97E" stroke-width="0.6" stroke-opacity="0.10"/>
+  </g>
+</svg>

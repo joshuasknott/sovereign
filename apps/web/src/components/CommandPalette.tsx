@@ -70,12 +70,15 @@ import {
   FolderGit2Icon,
   FolderIcon,
   FolderPlusIcon,
+  LayoutDashboardIcon,
   MessageSquareDashedIcon,
   LinkIcon,
   MessageSquareIcon,
   PaletteIcon,
+  PoundSterlingIcon,
   RotateCcwIcon,
   SettingsIcon,
+  ShieldAlertIcon,
   MonitorIcon,
   PinIcon,
   PinOffIcon,
@@ -121,6 +124,7 @@ import { readLocalApi } from "../localApi";
 import { configuredHostedAppUrl } from "../hostedPairing";
 import { desktopLocalBackendId } from "../connection/desktopLocal";
 import { filesystemEnvironment, useFilesystemReadAccess } from "../state/filesystem";
+import { useSovereignEnvironmentId, useSovereignOverview } from "../state/sovereign";
 import { projectEnvironment } from "../state/projects";
 import { useEnvironmentQuery } from "../state/query";
 import { serverEnvironment } from "../state/server";
@@ -1407,7 +1411,7 @@ function OpenCommandPaletteDialog(props: {
       value: "action:triage",
       searchTerms: ["triage", "bug", "issue", "report", "broken", "debug", "help", "support"],
       title: gt("Triage an issue"),
-      description: gt("An agent investigates a T3 Code problem and helps file an issue"),
+      description: gt("An agent investigates a Sovereign problem and helps file an issue"),
       icon: <BugIcon className={ITEM_ICON_CLASS} />,
       run: () => startTriage(triageEnvironmentId),
     });
@@ -1745,7 +1749,7 @@ function OpenCommandPaletteDialog(props: {
       "openclaw",
       "hermes",
     ],
-    title: gt("Use T3 Code in another app (MCP)"),
+    title: gt("Use Sovereign in another app (MCP)"),
     icon: <PlugIcon className={ITEM_ICON_CLASS} />,
     run: async () => {
       openUseInAnotherApp(
@@ -1794,6 +1798,80 @@ function OpenCommandPaletteDialog(props: {
       shortcutCommand: direction === 1 ? "workspace.focusNext" : "workspace.focusPrevious",
       run: async () => {
         queueWorkspaceFocusFromPalette(direction);
+      },
+    });
+  }
+
+  const sovereignEnvironmentId = useSovereignEnvironmentId();
+  const sovereignOverview = useSovereignOverview(sovereignEnvironmentId, "command-palette").data;
+
+  actionItems.push({
+    kind: "action",
+    value: "action:sovereign-overview",
+    searchTerms: ["sovereign", "overview", "home", "dashboard", "command centre", "ventures"],
+    title: gt("Go to Sovereign Overview"),
+    icon: <LayoutDashboardIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/overview" });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:sovereign-governance",
+    searchTerms: [
+      "sovereign",
+      "emergency stop",
+      "halt",
+      "governance",
+      "approvals",
+      "safety",
+      "audit",
+    ],
+    title: sovereignOverview?.controlState?.emergencyStopActive
+      ? gt("Resume Sovereign Operations (Emergency Stop active)")
+      : gt("Open Sovereign Governance & Emergency Stop"),
+    icon: <ShieldAlertIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/settings/governance" });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:sovereign-integrations",
+    searchTerms: ["sovereign", "integrations", "stripe", "resend", "vapi", "twilio", "gumroad"],
+    title: gt("Configure Sovereign Integrations"),
+    icon: <PlugIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/settings/sovereign-integrations" });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:sovereign-budgets",
+    searchTerms: ["sovereign", "budgets", "currency", "gbp", "ledger", "spend cap"],
+    title: gt("Open Sovereign Budgets & Currency"),
+    icon: <PoundSterlingIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/settings/budgets" });
+    },
+  });
+
+  for (const row of sovereignOverview?.ventures ?? []) {
+    actionItems.push({
+      kind: "action",
+      value: `action:sovereign-venture:${row.venture.id}`,
+      searchTerms: ["venture", "sovereign", row.venture.name, row.venture.kind, row.venture.status],
+      title: gt("Open venture: {name}", { name: row.venture.name }),
+      description: row.venture.summary || row.venture.kind,
+      icon: <LayoutDashboardIcon className={ITEM_ICON_CLASS} />,
+      run: async () => {
+        await navigate({
+          to: "/ventures/$ventureId",
+          params: { ventureId: row.venture.id },
+        });
       },
     });
   }

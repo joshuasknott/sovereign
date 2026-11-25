@@ -1,0 +1,52 @@
+<svg width="1024" height="1024" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="6" x2="110" y2="124" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#13212A"/>
+      <stop offset="0.52" stop-color="#0D171F"/>
+      <stop offset="1" stop-color="#080E14"/>
+    </linearGradient>
+    <radialGradient id="topSheen" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(42 16) rotate(58) scale(92 84)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.09"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.02"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="accentAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(94 102) rotate(-135) scale(76 72)">
+      <stop stop-color="#5BA7B0" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#5BA7B0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="18" y1="6" x2="110" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.20"/>
+      <stop offset="0.5" stop-color="#67B4BD" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="plane" x1="26" y1="20" x2="102" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2F7F8"/>
+      <stop offset="1" stop-color="#D8E4E7"/>
+    </linearGradient>
+    <linearGradient id="facet" x1="43" y1="51" x2="85" y2="77" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9BD5DA"/>
+      <stop offset="0.52" stop-color="#62AEB7"/>
+      <stop offset="1" stop-color="#3C7D86"/>
+    </linearGradient>
+    <pattern id="devGrid" width="16" height="16" patternUnits="userSpaceOnUse">
+      <path d="M16 0H0V16" stroke="#9BD5DA" stroke-width="0.35" stroke-opacity="0.15"/>
+    </pattern>
+    <clipPath id="squircle">
+      <rect width="128" height="128" rx="28"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#squircle)">
+    <rect width="128" height="128" fill="url(#bg)"/>
+    <rect width="128" height="128" fill="url(#topSheen)"/>
+    <rect width="128" height="128" fill="url(#accentAura)"/>
+    <rect x="8" y="8" width="112" height="112" fill="url(#devGrid)" opacity="0.9"/>
+    <path d="M64 8V120M8 64H120" stroke="#9BD5DA" stroke-width="0.4" stroke-opacity="0.22"/>
+    <path d="M16 112L112 16" stroke="#9BD5DA" stroke-width="0.55" stroke-opacity="0.20" stroke-dasharray="2.5 2.5"/>
+    <path d="M16 20V16H20M112 20V16H108M16 108V112H20M112 108V112H108" stroke="#9BD5DA" stroke-width="0.8" stroke-opacity="0.45" stroke-linecap="round"/>
+    <rect x="1.25" y="1.25" width="125.5" height="125.5" rx="26.75" stroke="url(#rim)" stroke-width="1.5"/>
+  </g>
+  <path d="M42 20H100L85 35H49L41 43L49 51H70L55 66H41L26 51V36L42 20Z" fill="url(#plane)"/>
+  <path d="M86 108H28L43 93H79L87 85L79 77H58L73 62H87L102 77V92L86 108Z" fill="url(#plane)"/>
+  <path d="M58 51H70L55 66H43L58 51Z" fill="url(#facet)"/>
+  <path d="M70 77H58L73 62H85L70 77Z" fill="url(#facet)"/>
+</svg>

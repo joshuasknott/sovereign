@@ -15,6 +15,10 @@ import {
   AuthRelayWriteScope,
   AuthSettingsWriteScope,
   AuthSourceControlWriteScope,
+  AuthSovereignAdminScope,
+  AuthSovereignApproveScope,
+  AuthSovereignOperateScope,
+  AuthSovereignReadScope,
   AuthTerminalOperateScope,
   AuthTerminalReadScope,
 } from "@t3tools/contracts";
@@ -111,6 +115,30 @@ export const AUTH_SCOPE_OPTIONS: ReadonlyArray<{
     title: msg("Configure relay (admin)"),
     description: msg(
       "Set up or replace T3 Connect, including its trusted pairing credential issuer.",
+    ),
+  },
+  {
+    scope: AuthSovereignReadScope,
+    title: msg("View Sovereign"),
+    description: msg("Read ventures, finances, approvals, provider pool status, and audit logs."),
+  },
+  {
+    scope: AuthSovereignOperateScope,
+    title: msg("Operate Sovereign"),
+    description: msg(
+      "Create and update ventures, objectives, tasks, sales records, and ledger entries.",
+    ),
+  },
+  {
+    scope: AuthSovereignApproveScope,
+    title: msg("Approve Sovereign actions"),
+    description: msg("Decide external action approvals and manage pre-approval policies."),
+  },
+  {
+    scope: AuthSovereignAdminScope,
+    title: msg("Administer Sovereign"),
+    description: msg(
+      "Control emergency stop, global budgets, integrations, and provider pool routing.",
     ),
   },
 ];

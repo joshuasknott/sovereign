@@ -28,6 +28,19 @@ export const telemetryChannel: ReleaseChannel =
   typeof __T3CODE_TELEMETRY_CHANNEL__ === "undefined" ? "dev" : __T3CODE_TELEMETRY_CHANNEL__;
 
 export const DEFAULT_PORT = 3773;
+const SOVEREIGN_HOME_ENV_VAR = "SOVEREIGN_HOME";
+const T3CODE_HOME_ENV_VAR = "T3CODE_HOME";
+
+export const resolveConfiguredHomeDir = (
+  env: Readonly<Record<string, string | undefined>>,
+): string | undefined => {
+  const sovereignHome = env[SOVEREIGN_HOME_ENV_VAR]?.trim();
+  if (sovereignHome !== undefined && sovereignHome.length > 0) {
+    return sovereignHome;
+  }
+  const t3Home = env[T3CODE_HOME_ENV_VAR]?.trim();
+  return t3Home !== undefined && t3Home.length > 0 ? t3Home : undefined;
+};
 
 export const RuntimeMode = Schema.Literals(["web", "desktop"]);
 export type RuntimeMode = typeof RuntimeMode.Type;

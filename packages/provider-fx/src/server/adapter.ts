@@ -39,6 +39,7 @@ import {
 } from "@t3tools/provider-core/server/adapterDriver";
 import {
   AcpProviderCapabilitiesV2,
+  classifyAcpPromptFailure,
   makeAcpAdapterV2,
   type AcpAdapterV2Flavor,
   type AcpAdapterV2RuntimeInput,
@@ -194,6 +195,13 @@ export interface FxAdapterV2Options {
   readonly assertComplete?: Effect.Effect<void, EffectAcpErrors.AcpError>;
 }
 
+export function fxPromptFailure(cause: unknown, nowMs?: number) {
+  return classifyAcpPromptFailure(cause, {
+    includeRequestMessage: true,
+    ...(nowMs === undefined ? {} : { nowMs }),
+  });
+}
+
 function makeFxAcpAdapterFlavor(options: FxAdapterV2Options): AcpAdapterV2Flavor {
   const makeRuntime =
     options.makeRuntime ??
@@ -209,6 +217,7 @@ function makeFxAcpAdapterFlavor(options: FxAdapterV2Options): AcpAdapterV2Flavor
     driver: FX_DRIVER_KIND,
     runtimeHarness: "fx",
     capabilities: FxProviderCapabilitiesV2,
+    promptFailure: fxPromptFailure,
     makeRuntime: (input) =>
       makeRuntime({ ...input, sessionMeta: () => FX_SESSION_META }).pipe(
         Effect.map(withFxSessionMode),

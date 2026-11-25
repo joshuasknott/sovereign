@@ -108,6 +108,7 @@ import * as HtmlHandlers from "./toolkits/html/handlers.ts";
 import { MessageToolkit } from "./toolkits/message/tools.ts";
 import * as MessageHandlers from "./toolkits/message/handlers.ts";
 import { HtmlPreviewTool, HtmlPreviewToolkit, HtmlRenderToolkit } from "./toolkits/html/tools.ts";
+import * as SovereignToolkitModule from "./toolkits/sovereign.ts";
 import { MCP_HTTP_PATH } from "../httpCors.ts";
 import { requestUrl } from "../requestUrl.ts";
 
@@ -1635,6 +1636,11 @@ export const layerMilestoneEvents = Layer.effectDiscard(
   Layer.provide(layerWebhookTransport),
 );
 
+const layerSovereignToolkit = toolkitRegistration(
+  SovereignToolkitModule.SovereignToolkit,
+  SovereignToolkitModule.layer,
+);
+
 export const layer = layerMcpTransport(
-  Layer.mergeAll(layerTools, layerToolSearch, layerMilestoneEvents),
+  Layer.mergeAll(layerTools, layerToolSearch, layerMilestoneEvents, layerSovereignToolkit),
 );

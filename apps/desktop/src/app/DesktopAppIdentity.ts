@@ -99,6 +99,8 @@ export const make = Effect.gen(function* () {
       applicationName: environment.displayName,
       applicationVersion: environment.appVersion,
       version: Option.getOrElse(commitHash, () => "unknown"),
+      credits:
+        "Sovereign is an independent open-source project built upon T3 Code (MIT License, Copyright (c) 2026 T3 Tools Inc.). Not affiliated with, endorsed by, or maintained by T3 Tools, Inc.",
     });
 
     if (environment.platform === "win32") {

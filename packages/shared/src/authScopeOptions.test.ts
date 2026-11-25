@@ -1,6 +1,24 @@
+import {
+  AuthGrantScope,
+  AuthSovereignAdminScope,
+  AuthSovereignApproveScope,
+  AuthSovereignOperateScope,
+  AuthSovereignReadScope,
+} from "@t3tools/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
-import { sessionPermissionsUnavailableMessage } from "./authScopeOptions.ts";
+import { AUTH_SCOPE_OPTIONS, sessionPermissionsUnavailableMessage } from "./authScopeOptions.ts";
+
+describe("AUTH_SCOPE_OPTIONS", () => {
+  it("describes every grantable scope including Sovereign scopes", () => {
+    const scopes = AUTH_SCOPE_OPTIONS.map((option) => option.scope);
+    expect(scopes).toContain(AuthSovereignReadScope);
+    expect(scopes).toContain(AuthSovereignOperateScope);
+    expect(scopes).toContain(AuthSovereignApproveScope);
+    expect(scopes).toContain(AuthSovereignAdminScope);
+    expect(new Set(scopes)).toEqual(new Set(AuthGrantScope.literals));
+  });
+});
 
 describe("sessionPermissionsUnavailableMessage", () => {
   it("asks to connect when the environment is disconnected", () => {

@@ -4,7 +4,8 @@ export function formatAppDisplayName(input: {
   readonly baseName: string;
   readonly stageLabel: string;
 }): string {
-  if (input.stageLabel.trim().toLowerCase() === "latest") {
+  const normalizedStage = input.stageLabel.trim().toLowerCase();
+  if (normalizedStage === "" || normalizedStage === "latest") {
     return input.baseName;
   }
 
@@ -24,7 +25,7 @@ export function resolveWebAppStageLabel(input: {
 }): string {
   return (
     // oxlint-disable-next-line t3code/no-untranslated-copy -- release channel name, part of the product name
-    resolveHostedAppChannelLabel(input.hostedAppChannel) ?? (input.development ? "Dev" : "Beta")
+    resolveHostedAppChannelLabel(input.hostedAppChannel) ?? (input.development ? "Dev" : "Latest")
   );
 }
 

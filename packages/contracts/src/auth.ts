@@ -48,6 +48,10 @@ export const AuthAccessWriteScope = "access:write" as const;
 export const AuthRelayReadScope = "relay:read" as const;
 export const AuthRelayWriteScope = "relay:write" as const;
 export const AuthRelayConfigureScope = "relay:configure" as const;
+export const AuthSovereignReadScope = "sovereign:read" as const;
+export const AuthSovereignOperateScope = "sovereign:operate" as const;
+export const AuthSovereignApproveScope = "sovereign:approve" as const;
+export const AuthSovereignAdminScope = "sovereign:admin" as const;
 export const AuthEnvironmentScope = Schema.Literals([
   AuthOrchestrationReadScope,
   AuthOrchestrationOperateScope,
@@ -67,6 +71,10 @@ export const AuthEnvironmentScope = Schema.Literals([
   AuthRelayReadScope,
   AuthRelayWriteScope,
   AuthRelayConfigureScope,
+  AuthSovereignReadScope,
+  AuthSovereignOperateScope,
+  AuthSovereignApproveScope,
+  AuthSovereignAdminScope,
 ]);
 export type AuthEnvironmentScope = typeof AuthEnvironmentScope.Type;
 export const AuthEnvironmentScopes = Schema.Array(AuthEnvironmentScope);
@@ -110,6 +118,10 @@ const legacyParents: Partial<Record<AuthEnvironmentScope, AuthEnvironmentScope>>
   [AuthSourceControlWriteScope]: AuthOrchestrationOperateScope,
   [AuthFilesystemWriteScope]: AuthOrchestrationOperateScope,
   [AuthTerminalReadScope]: AuthTerminalOperateScope,
+  [AuthSovereignReadScope]: AuthOrchestrationReadScope,
+  [AuthSovereignOperateScope]: AuthOrchestrationOperateScope,
+  [AuthSovereignApproveScope]: AuthOrchestrationOperateScope,
+  [AuthSovereignAdminScope]: AuthOrchestrationOperateScope,
 };
 
 /** Keep permission denials decodable by clients with the original scope enum. */
@@ -170,6 +182,10 @@ export const AuthStandardClientScopes = [
   AuthAccessReadScope,
   AuthAccessWriteScope,
   AuthRelayWriteScope,
+  AuthSovereignReadScope,
+  AuthSovereignOperateScope,
+  AuthSovereignApproveScope,
+  AuthSovereignAdminScope,
 ] as const;
 
 export const AuthAdministrativeClientScopes = [

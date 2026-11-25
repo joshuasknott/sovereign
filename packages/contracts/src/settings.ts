@@ -209,6 +209,10 @@ export const EnvironmentIdentificationMode = Schema.Literals([
 export type EnvironmentIdentificationMode = typeof EnvironmentIdentificationMode.Type;
 export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "artwork";
 
+export const SovereignAtmosphere = Schema.Literals(["ambient", "subtle", "off"]);
+export type SovereignAtmosphere = typeof SovereignAtmosphere.Type;
+const DEFAULT_SOVEREIGN_ATMOSPHERE: SovereignAtmosphere = "ambient";
+
 export const SnapShotKeyChord = KeybindingShortcut.check(
   Schema.makeFilter(
     (shortcut) =>
@@ -617,6 +621,9 @@ export const ClientSettingsSchema = Schema.Struct({
   // Opt-in TeX typesetting in rendered Markdown. Off keeps math parsing and
   // KaTeX out of the render path entirely.
   mathRenderingEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  sovereignAtmosphere: SovereignAtmosphere.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_SOVEREIGN_ATMOSPHERE)),
+  ),
 });
 export type ClientSettings = typeof ClientSettingsSchema.Type;
 
@@ -2195,5 +2202,6 @@ export const ClientSettingsPatch = Schema.Struct({
   snapShotAnimations: Schema.optionalKey(Schema.Boolean),
   wordWrap: Schema.optionalKey(Schema.Boolean),
   mathRenderingEnabled: Schema.optionalKey(Schema.Boolean),
+  sovereignAtmosphere: Schema.optionalKey(SovereignAtmosphere),
 });
 export type ClientSettingsPatch = typeof ClientSettingsPatch.Type;

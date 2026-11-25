@@ -2,7 +2,7 @@ import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
 import { m as resolveMessage } from "~/i18n/messages";
 import { useAtomValue } from "@effect/atom-react";
 import { NotificationSettings } from "./NotificationSettings";
-import { PRIVACY_POLICY_URL } from "../../legalLinks";
+import { SOVEREIGN_UPSTREAM_ATTRIBUTION } from "../../legalLinks";
 import { CheckIcon } from "lucide-react";
 import { msg, T, useGT, useMessages } from "gt-react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -37,9 +37,9 @@ import { resolvePastedPath } from "@t3tools/shared/path";
 import * as Equal from "effect/Equal";
 import * as Schema from "effect/Schema";
 import { APP_VERSION, HOSTED_APP_CHANNEL, HOSTED_APP_CHANNEL_LABEL } from "../../branding";
+import { SovereignWordmark } from "../SovereignWordmark";
 import { AboutVersionTitle } from "./AboutVersionTitle";
 import { CliCommandSettingsRow } from "./CliCommandSettingsRow";
-import { MobileAppSettingsRow } from "./MobileAppSettingsRow";
 import {
   canCheckForUpdate,
   getDesktopUpdateActionError,
@@ -499,9 +499,12 @@ export function useSettingsRestore(onRestored?: () => void) {
   const isBackgroundActivityDirty = hasChangedBackgroundActivitySettings(settings);
 
   const changedSettingLabels = [
-    ...(theme !== "system" ? [gt("Theme")] : []),
+    ...(theme !== "sovereign" ? [gt("Theme")] : []),
     ...(!followSystem ? [gt("Follow system")] : []),
     ...(themeHalves !== null ? [gt("Theme mix")] : []),
+    ...(settings.sovereignAtmosphere !== DEFAULT_UNIFIED_SETTINGS.sovereignAtmosphere
+      ? [gt("Sovereign atmosphere")]
+      : []),
     ...(settings.appearanceContrast !== DEFAULT_UNIFIED_SETTINGS.appearanceContrast
       ? [gt("Contrast")]
       : []),
@@ -675,7 +678,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       previousTheme = readThemePreference();
     } catch {}
     const liveHalves = readThemeHalves();
-    const needsThemeReset = previousTheme !== "system";
+    const needsThemeReset = previousTheme !== "sovereign";
     const needsMixReset = liveHalves !== null;
     const needsFollowSystemReset = readAppearanceModePreference(previousTheme) !== "system";
     const notifyThemeRestoreFailure = () => {
@@ -694,7 +697,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       if (previousHalves?.light) setThemeHalf("light", previousHalves.light);
       if (previousHalves?.dark) setThemeHalf("dark", previousHalves.dark);
     };
-    if (needsThemeReset && !setTheme("system")) {
+    if (needsThemeReset && !setTheme("sovereign")) {
       notifyThemeRestoreFailure();
       return;
     }
@@ -709,6 +712,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       return;
     }
     updateSettings({
+      sovereignAtmosphere: DEFAULT_UNIFIED_SETTINGS.sovereignAtmosphere,
       appearanceContrast: DEFAULT_UNIFIED_SETTINGS.appearanceContrast,
       diffColorScheme: DEFAULT_UNIFIED_SETTINGS.diffColorScheme,
       chatWidth: DEFAULT_UNIFIED_SETTINGS.chatWidth,
@@ -2567,11 +2571,16 @@ export function AboutSettingsPanel() {
             />
           </>
         )}
-        <MobileAppSettingsRow />
+        <SettingsRow
+          title={<SovereignWordmark />}
+          description={gt(
+            "Local-first autonomous commercial operating system for supervised ventures.",
+          )}
+        />
         {primaryEnvironmentId === null ? null : (
           <SettingsRow
             {...setting("welcome-page")}
-            description={gt("See your agents, import projects, and set up your phone.")}
+            description={gt("See your agents, import projects, and configure this computer.")}
             control={
               <Button size="sm" variant="outline" render={<Link to="/welcome" />}>
                 <T context="verb, opens a page">Open</T>
@@ -2583,25 +2592,21 @@ export function AboutSettingsPanel() {
 
       <SettingsSection id="legal" title={gt("Legal")}>
         <SettingsRow
-          {...setting("privacy-policy")}
+          title={gt("Upstream attribution")}
           description={
             telemetryOff === undefined
-              ? gt("How we handle your data, including the anonymous usage data T3 Code collects.")
-              : gt("How we handle your data. {telemetryOff}", { telemetryOff })
-          }
-          control={
-            <Button
-              render={<a href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer noopener" />}
-              size="sm"
-              variant="outline"
-            >
-              <T>View policy</T>
-            </Button>
+              ? SOVEREIGN_UPSTREAM_ATTRIBUTION
+              : gt("{notice} {telemetryOff}", {
+                  notice: SOVEREIGN_UPSTREAM_ATTRIBUTION,
+                  telemetryOff,
+                })
           }
         />
         <SettingsRow
           {...setting("open-source-licenses")}
-          description={gt("Notices for dependencies, assets, and optional tools used by T3 Code.")}
+          description={gt(
+            "Notices for dependencies, assets, and optional tools used by Sovereign.",
+          )}
           control={
             <Button
               render={<Link to="/settings/open-source-licenses" />}

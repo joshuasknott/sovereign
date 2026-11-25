@@ -1,6 +1,6 @@
 {
   "fill": {
-    "solid": "display-p3:0.00000,0.00000,0.00000,1.00000"
+    "solid": "display-p3:0.03137,0.05490,0.07843,1.00000"
   },
   "groups": [
     {
@@ -8,9 +8,9 @@
         {
           "glass": true,
           "image-name": "text.svg",
-          "name": "Text",
+          "name": "Emblem",
           "position": {
-            "scale": 8.5,
+            "scale": 8,
             "translation-in-points": [0, 0]
           }
         },
@@ -19,12 +19,12 @@
           "image-name": "annotations.svg",
           "name": "Annotations",
           "position": {
-            "scale": 8.5,
+            "scale": 8,
             "translation-in-points": [0, 0]
           }
         },
         {
-          "glass": true,
+          "glass": false,
           "image-name": "background.svg",
           "name": "Background",
           "position": {
@@ -35,7 +35,7 @@
       ],
       "shadow": {
         "kind": "neutral",
-        "opacity": 0.6
+        "opacity": 0.55
       },
       "translucency": {
         "enabled": true,

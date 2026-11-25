@@ -1,0 +1,46 @@
+<svg width="1024" height="1024" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="6" x2="110" y2="124" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#191C24"/>
+      <stop offset="0.52" stop-color="#101218"/>
+      <stop offset="1" stop-color="#090A0D"/>
+    </linearGradient>
+    <radialGradient id="topSheen" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(42 16) rotate(58) scale(92 84)">
+      <stop stop-color="#FFFFFF" stop-opacity="0.09"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.02"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="accentAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(94 102) rotate(-135) scale(76 72)">
+      <stop stop-color="#C8A97E" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#C8A97E" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="18" y1="6" x2="110" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.20"/>
+      <stop offset="0.5" stop-color="#C8A97E" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="plane" x1="26" y1="20" x2="102" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAF8F3"/>
+      <stop offset="1" stop-color="#E5DFD3"/>
+    </linearGradient>
+    <linearGradient id="facet" x1="43" y1="51" x2="85" y2="77" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E4CAA2"/>
+      <stop offset="0.52" stop-color="#C8A97E"/>
+      <stop offset="1" stop-color="#9D7F57"/>
+    </linearGradient>
+    <clipPath id="squircle">
+      <rect width="128" height="128" rx="28"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#squircle)">
+    <rect width="128" height="128" fill="url(#bg)"/>
+    <rect width="128" height="128" fill="url(#topSheen)"/>
+    <rect width="128" height="128" fill="url(#accentAura)"/>
+    <path d="M16 112L112 16" stroke="#C8A97E" stroke-width="0.6" stroke-opacity="0.10"/>
+    <rect x="1.25" y="1.25" width="125.5" height="125.5" rx="26.75" stroke="url(#rim)" stroke-width="1.5"/>
+  </g>
+  <path d="M42 20H100L85 35H49L41 43L49 51H70L55 66H41L26 51V36L42 20Z" fill="url(#plane)"/>
+  <path d="M86 108H28L43 93H79L87 85L79 77H58L73 62H87L102 77V92L86 108Z" fill="url(#plane)"/>
+  <path d="M58 51H70L55 66H43L58 51Z" fill="url(#facet)"/>
+  <path d="M70 77H58L73 62H85L70 77Z" fill="url(#facet)"/>
+</svg>

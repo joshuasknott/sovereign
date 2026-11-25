@@ -9,6 +9,10 @@ import {
   AuthProvidersManageScope,
   AuthSettingsWriteScope,
   AuthSourceControlWriteScope,
+  AuthSovereignAdminScope,
+  AuthSovereignApproveScope,
+  AuthSovereignOperateScope,
+  AuthSovereignReadScope,
   AuthTerminalOperateScope,
   type AuthEnvironmentScope,
   mcpClientScopes,
@@ -16,6 +20,7 @@ import {
 import { PeerLinkLinkPairingInput } from "./peerLink.ts";
 import { ORCHESTRATION_V2_WS_METHODS } from "./orchestrationV2.ts";
 import { WS_METHODS } from "./rpc.ts";
+import { containsSecretReference } from "./settingsSecretValue.ts";
 
 /** Incremental client enforcement; the server still authorizes every request. */
 export const CLIENT_GUARDED_RPC_SCOPES = {
@@ -105,6 +110,44 @@ export const CLIENT_GUARDED_RPC_SCOPES = {
   [WS_METHODS.peerLinksPairLink]: AuthAccessWriteScope,
   // Send stores and sends a report from a thread's turn: the bar of running that thread.
   [WS_METHODS.agentFeedbackAnswerRequest]: AuthOrchestrationOperateScope,
+  [WS_METHODS.serverUpsertProviderInstance]: AuthProvidersManageScope,
+  [WS_METHODS.serverRemoveProviderInstance]: AuthProvidersManageScope,
+  [WS_METHODS.sovereignSubscribe]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignGetOverview]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignGetVentureDetail]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignListBlueprints]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignListLedgerEntries]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignListApprovals]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignListAuditEvents]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignGetProviderPool]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignListIntegrations]: AuthSovereignReadScope,
+  [WS_METHODS.sovereignCreateVenture]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignUpdateVenture]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignDeleteVenture]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignCreateObjective]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignUpdateObjective]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignCreateOpportunity]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignUpdateOpportunity]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignCreateTask]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignUpdateTask]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignCreateArtifact]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignCreateLead]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignCreateProposal]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignCreateCommunication]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignUpsertVoiceAgent]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignCreateInvoice]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignRecordLedgerEntry]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignRequestApproval]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignRouteProvider]: AuthSovereignOperateScope,
+  [WS_METHODS.sovereignDecideApproval]: AuthSovereignApproveScope,
+  [WS_METHODS.sovereignUpsertPreapprovalPolicy]: AuthSovereignApproveScope,
+  [WS_METHODS.sovereignDeletePreapprovalPolicy]: AuthSovereignApproveScope,
+  [WS_METHODS.sovereignUpdateControlState]: AuthSovereignAdminScope,
+  [WS_METHODS.sovereignTriggerEmergencyStop]: AuthSovereignAdminScope,
+  [WS_METHODS.sovereignUpsertIntegration]: AuthSovereignAdminScope,
+  [WS_METHODS.sovereignDeleteIntegration]: AuthSovereignAdminScope,
+  [WS_METHODS.sovereignTestIntegration]: AuthSovereignAdminScope,
+  [WS_METHODS.sovereignUpdateProviderPoolConfig]: AuthSovereignAdminScope,
 } as const;
 export type ClientGuardedRpcTag = keyof typeof CLIENT_GUARDED_RPC_SCOPES;
 
@@ -136,6 +179,13 @@ export function clientRpcRequiredScopes(
   }
   if (method === WS_METHODS.guestShareCreate) {
     return [AuthAccessWriteScope, AuthOrchestrationReadScope];
+  }
+  if (
+    method === WS_METHODS.sovereignUpsertIntegration &&
+    input !== undefined &&
+    containsSecretReference(input)
+  ) {
+    return [AuthSovereignAdminScope, AuthProvidersManageScope];
   }
   return Object.hasOwn(CLIENT_GUARDED_RPC_SCOPES, method)
     ? [CLIENT_GUARDED_RPC_SCOPES[method as ClientGuardedRpcTag]]

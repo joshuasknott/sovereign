@@ -23,6 +23,7 @@ import {
   type ThemeDefinition,
   type ThemeHalves,
   T3_CHAT_THEME,
+  SOVEREIGN_THEME,
   EMBER_THEME,
   GROVE_THEME,
   IRIS_THEME,
@@ -791,6 +792,22 @@ export function ThemeLibrary({
         className="grid w-full gap-2"
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))" }}
       >
+        <ThemeLibraryCard
+          activeModes={pickedModesFor(SOVEREIGN_THEME.id)}
+          isActive={false}
+          key={SOVEREIGN_THEME.id}
+          onDuplicate={() =>
+            openThemeEditor({
+              editingThemeId: null,
+              seedThemeId: SOVEREIGN_THEME.id,
+              seedName: `${SOVEREIGN_THEME.label} copy`,
+              initialAppearance,
+            })
+          }
+          onUse={() => persistTheme(SOVEREIGN_THEME.id)}
+          onUseMode={handlePairPick(SOVEREIGN_THEME.id)}
+          theme={getThemeCardDefinition(SOVEREIGN_THEME)}
+        />
         {STANDARD_THEME_CARDS.map((standardTheme) => (
           <ThemeLibraryCard
             activeModes={pickedModesFor(null)}

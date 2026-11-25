@@ -22,6 +22,7 @@ import * as EffectAcpErrors from "effect-acp/errors";
 import type * as AcpSessionRuntime from "@t3tools/provider-acp/server/AcpSessionRuntime";
 import {
   AcpProviderCapabilitiesV2,
+  classifyAcpPromptFailure,
   makeAcpAdapterV2,
   type AcpAdapterV2Flavor,
   type AcpAdapterV2RuntimeInput,
@@ -34,7 +35,6 @@ import {
   type ProviderAdapterDriver,
   type ProviderAdapterDriverCreateInput,
 } from "@t3tools/provider-core/server/adapterDriver";
-import { makeProviderFailure } from "@t3tools/provider-core/server/failure";
 import type * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
 import { mergeProviderInstanceEnvironment } from "@t3tools/provider-core/server/instanceEnvironment";
 import type * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
@@ -346,8 +346,6 @@ function selectValues(
   );
 }
 
-const isAcpRequestError = Schema.is(EffectAcpErrors.AcpRequestError);
-
 /**
  * Evidence that Kiro started the current prompt, so Stop's `session/cancel` is
  * honored: a `turn_start` info update or output only a running prompt produces.
@@ -521,17 +519,11 @@ function extractKiroSubagentUpdate(tool: AcpToolCallState): AcpAdapterV2Subagent
   };
 }
 
-/**
- * Kiro's prompt errors carry a message meant for the user (live 2.27: -32000
- * "The model 'x' is not available. Please select a different model and try
- * again. (Request ID: …)"). Show it instead of the generic failure text;
- * makeProviderFailure bounds and redacts it.
- */
-function kiroPromptFailure(cause: unknown) {
-  return makeProviderFailure({
-    cause,
-    ...(isAcpRequestError(cause) ? { message: cause.errorMessage, code: String(cause.code) } : {}),
-    class: "provider_error",
+/** Preserves Kiro's user-facing prompt errors while mapping 429/throttling/quota errors to usage_limit. */
+export function kiroPromptFailure(cause: unknown, nowMs?: number) {
+  return classifyAcpPromptFailure(cause, {
+    includeRequestMessage: true,
+    ...(nowMs === undefined ? {} : { nowMs }),
   });
 }
 

@@ -50,6 +50,7 @@ import * as HostProcess from "@t3tools/shared/HostProcess";
 import { AgentScope } from "@t3tools/shared/AgentScope";
 import { toolOutputImages, compactDynamicToolOutput } from "@t3tools/shared/toolOutput";
 import {
+  classifyPiProviderFailure,
   makePiAdapterV2,
   PiAdapterV2Driver,
   PI_PROVIDER,
@@ -7389,4 +7390,35 @@ process.stdout.write('{"type":"ready"}\\n');
         assert.isTrue(closedBeforeGrace);
       }).pipe(Effect.provide(NodeServices.layer)),
   );
+});
+
+describe("classifyPiProviderFailure", () => {
+  const nowMs = Date.parse("2026-10-20T10:00:00.000Z");
+
+  it("classifies 429, rate-limit, and quota errors as usage_limit and parses reset times", () => {
+    const isoReset = classifyPiProviderFailure({
+      message: "HTTP 429 Too Many Requests. Usage limit resets at 2026-10-20T12:00:00Z",
+      nowMs,
+    });
+    assert.strictEqual(isoReset.class, "usage_limit");
+    assert.strictEqual(isoReset.resetAt, "2026-10-20T12:00:00.000Z");
+
+    const retryAfter = classifyPiProviderFailure({
+      message: "Rate limit exceeded (Retry-After: 45s)",
+      nowMs,
+    });
+    assert.strictEqual(retryAfter.class, "usage_limit");
+    assert.strictEqual(retryAfter.resetAt, "2026-10-20T10:00:45.000Z");
+  });
+
+  it("keeps non-rate-limit errors as provider_error", () => {
+    const ordinary = classifyPiProviderFailure({
+      message: "Invalid tool schema returned by model",
+      retryable: false,
+      nowMs,
+    });
+    assert.strictEqual(ordinary.class, "provider_error");
+    assert.strictEqual(ordinary.retryable, false);
+    assert.isUndefined(ordinary.resetAt);
+  });
 });

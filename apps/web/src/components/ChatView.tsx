@@ -3395,9 +3395,8 @@ export default function ChatView(props: ChatViewProps) {
   useEffect(() => {
     if (pendingSidebarFileDrops.length === 0) return;
     if (
-      typeof composerDraftTarget === "string" ||
       !pendingSidebarFileDrops.some((drop) =>
-        isSameSidebarThreadRef(composerDraftTarget, drop.threadRef),
+        isSameSidebarThreadRef(routeThreadRef, drop.threadRef),
       )
     ) {
       return;
@@ -3405,17 +3404,17 @@ export default function ChatView(props: ChatViewProps) {
     if (!activeThread) return;
     if (!composerRef.current) {
       const raf = window.requestAnimationFrame(() => {
-        if (!composerRef.current || typeof composerDraftTarget === "string") return;
-        const files = consumePendingFileDrop(composerDraftTarget);
+        if (!composerRef.current) return;
+        const files = consumePendingFileDrop(routeThreadRef);
         if (files !== null) composerRef.current?.addDroppedFiles(files);
       });
       return () => window.cancelAnimationFrame(raf);
     }
-    const files = consumePendingFileDrop(composerDraftTarget);
+    const files = consumePendingFileDrop(routeThreadRef);
     if (files !== null) composerRef.current.addDroppedFiles(files);
   }, [
     activeThread,
-    composerDraftTarget,
+    routeThreadRef,
     composerRef,
     consumePendingFileDrop,
     pendingSidebarFileDrops,

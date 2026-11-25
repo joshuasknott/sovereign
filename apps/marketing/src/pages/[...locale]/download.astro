@@ -30,7 +30,7 @@ const imageProps = {
   jsonLd={[
     softwareJsonLd(messagesFor(locale).layout.defaultDescription),
     breadcrumbJsonLd([
-      { name: "T3 Code", path: localizedHref(locale, "/") },
+      { name: "Sovereign", path: localizedHref(locale, "/") },
       { name: t.breadcrumb, path: localizedHref(locale, "/download") },
     ]),
   ]}
@@ -155,13 +155,13 @@ const imageProps = {
           <a class="download-card" href={IOS_APP_STORE_URL} target="_blank" rel="noopener noreferrer">
             <span class="card-text">
               <span class="card-arch">{t.iphoneIpad}</span>
-              <span class="card-format">App Store</span>
+              <span class="card-format">iOS</span>
             </span>
           </a>
           <a class="download-card" href={ANDROID_PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
             <span class="card-text">
               <span class="card-arch">Android</span>
-              <span class="card-format">Google Play</span>
+              <span class="card-format">Android</span>
             </span>
           </a>
         </div>
@@ -172,13 +172,13 @@ const imageProps = {
           <svg class="platform-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7l5 5-5 5M12 17h7"/></svg>
           <h2 class="platform-name">{t.terminal}</h2>
         </div>
-        <code class="cli-line cli-line--stable">curl -fsSL https://t3.codes/install.sh | sh</code>
-        <code class="cli-line cli-line--stable">irm https://t3.codes/install.ps1 | iex</code>
-        <code class="cli-line cli-line--nightly">curl -fsSL https://t3.codes/install.sh | T3CODE_CHANNEL=nightly sh</code>
-        <code class="cli-line cli-line--nightly">$env:T3CODE_CHANNEL="nightly"; irm https://t3.codes/install.ps1 | iex</code>
+        <code class="cli-line cli-line--stable">./scripts/install.sh</code>
+        <code class="cli-line cli-line--stable">.\scripts\install.ps1</code>
+        <code class="cli-line cli-line--nightly">T3CODE_CHANNEL=nightly ./scripts/install.sh</code>
+        <code class="cli-line cli-line--nightly">$env:T3CODE_CHANNEL="nightly"; .\scripts\install.ps1</code>
         <p class="cli-note">{t.tryOnce}</p>
-        <code class="cli-line cli-line--stable">npx t3@latest</code>
-        <code class="cli-line cli-line--nightly">npx t3@nightly</code>
+        <code class="cli-line cli-line--stable">vp run dev</code>
+        <code class="cli-line cli-line--nightly">vp run dev</code>
       </section>
     </div>
 

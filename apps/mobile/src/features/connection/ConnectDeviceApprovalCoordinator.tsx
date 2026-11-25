@@ -102,14 +102,14 @@ const newDeviceNotices = createApprovalPromptQueue<NewDeviceNotice>((notice, ans
       unseen.length === 1
         ? m(
             msg(
-              "{device} connected through {product}. If this was not you, remove it in Settings → Access in T3 Code on that computer.",
-              { device: firstDevice, product: "T3 Connect" },
+              "{device} connected through {product}. If this was not you, remove it in Settings → Access in Sovereign on that computer.",
+              { device: firstDevice, product: "Sovereign Connect" },
             ),
           )
         : m(
             msg(
-              "{count, plural, one {{count} device} other {{count} devices}} connected through {product}. If this was not you, remove them in Settings → Access in T3 Code on that computer.",
-              { count: unseen.length, product: "T3 Connect" },
+              "{count, plural, one {{count} device} other {{count} devices}} connected through {product}. If this was not you, remove them in Settings → Access in Sovereign on that computer.",
+              { count: unseen.length, product: "Sovereign Connect" },
             ),
           ),
       [

@@ -381,7 +381,7 @@ export const waitForReachability = Effect.fn("cloud.cli.wait_for_reachability")(
   yield* Console.error(
     formatAlertBox(
       last === null
-        ? "✕ Could not check T3 Connect\n  The T3 server on this machine did not answer.\n  Fix: run `t3 service status`, then `t3 connect status`."
+        ? "✕ Could not check T3 Connect\n  The Sovereign server on this machine did not answer.\n  Fix: run `t3 service status`, then `t3 connect status`."
         : formatReachabilityFailure(last),
     ),
   );

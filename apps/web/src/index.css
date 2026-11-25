@@ -781,6 +781,26 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
      vellum, forest drafting paper, marine cyanotype, copper, and violet ink.
      These colors stay deliberately deep at the top edge so the white stage
      wordmark and controls retain contrast in both appearance modes. */
+  html[data-theme-id="sovereign"] {
+    --stage-art-top: oklch(0.84 0.035 76);
+    --stage-art-mid: oklch(0.64 0.048 74);
+    --stage-art-bottom: oklch(0.42 0.036 72);
+    --stage-art-highlight: oklch(0.96 0.015 80);
+    --stage-art-secondary: oklch(0.75 0.045 78);
+    --stage-art-tertiary: oklch(0.58 0.024 252);
+    --stage-art-line: oklch(0.94 0.014 82);
+
+    @variant dark {
+      --stage-art-top: oklch(0.24 0.016 258);
+      --stage-art-mid: oklch(0.18 0.014 260);
+      --stage-art-bottom: oklch(0.13 0.012 262);
+      --stage-art-highlight: oklch(0.79 0.056 76);
+      --stage-art-secondary: oklch(0.62 0.042 74);
+      --stage-art-tertiary: oklch(0.45 0.024 252);
+      --stage-art-line: oklch(0.88 0.02 80);
+    }
+  }
+
   html[data-theme-id="t3-chat"] {
     --stage-art-top: oklch(0.760675 0.141361 348.019);
     --stage-art-mid: oklch(0.588093 0.188832 353.138);
@@ -2712,4 +2732,147 @@ code {
 
 .messages-timeline-scroll:focus-visible {
   outline: none;
+}
+
+@layer components {
+  .sovereign-atmosphere-canvas {
+    background-color: var(--background);
+    --sovereign-glow-opacity: 1;
+    --sovereign-grid-opacity: 1;
+    --sovereign-grain-opacity: 1;
+  }
+
+  .sovereign-atmosphere-canvas[data-sovereign-surface="quiet"] {
+    --sovereign-glow-opacity: 0.42;
+    --sovereign-grid-opacity: 0.38;
+    --sovereign-grain-opacity: 0.45;
+  }
+
+  html[data-sovereign-atmosphere="subtle"] .sovereign-atmosphere-canvas {
+    --sovereign-glow-opacity: 0.45;
+    --sovereign-grid-opacity: 0.35;
+    --sovereign-grain-opacity: 0.4;
+  }
+
+  html[data-sovereign-atmosphere="subtle"]
+    .sovereign-atmosphere-canvas[data-sovereign-surface="quiet"] {
+    --sovereign-glow-opacity: 0.22;
+    --sovereign-grid-opacity: 0.18;
+    --sovereign-grain-opacity: 0.2;
+  }
+
+  html[data-sovereign-atmosphere="off"] .sovereign-atmosphere-layer {
+    display: none;
+  }
+
+  .sovereign-atmosphere-layer {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  /* Static architectural meridian light field + coordinate hairlines (zero continuous repaints). */
+  .sovereign-atmosphere-layer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: var(--sovereign-glow-opacity);
+    background-image:
+      radial-gradient(
+        62% 48% at 14% 0%,
+        color-mix(in oklab, var(--primary) 13%, transparent) 0%,
+        transparent 68%
+      ),
+      radial-gradient(
+        54% 42% at 88% 8%,
+        color-mix(in oklab, var(--foreground) 4.5%, transparent) 0%,
+        transparent 70%
+      ),
+      linear-gradient(180deg, color-mix(in oklab, var(--card) 32%, transparent) 0%, transparent 38%);
+
+    @variant light {
+      background-image:
+        radial-gradient(
+          64% 46% at 14% 0%,
+          color-mix(in oklab, var(--primary) 10%, transparent) 0%,
+          transparent 66%
+        ),
+        radial-gradient(
+          50% 38% at 88% 6%,
+          color-mix(in oklab, var(--foreground) 3%, transparent) 0%,
+          transparent 68%
+        ),
+        linear-gradient(
+          180deg,
+          color-mix(in oklab, var(--card) 48%, transparent) 0%,
+          transparent 36%
+        );
+    }
+  }
+
+  .sovereign-atmosphere-layer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: var(--sovereign-grid-opacity);
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in oklab, var(--border) 38%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--border) 38%, transparent) 1px,
+        transparent 1px
+      ),
+      radial-gradient(
+        circle at 1px 1px,
+        color-mix(in oklab, var(--foreground) 4%, transparent) 1px,
+        transparent 0
+      );
+    background-size:
+      48px 48px,
+      48px 48px,
+      16px 16px;
+    mask-image: radial-gradient(
+      92% 76% at 24% 6%,
+      rgb(0 0 0 / 82%) 0%,
+      rgb(0 0 0 / 28%) 56%,
+      transparent 95%
+    );
+    -webkit-mask-image: radial-gradient(
+      92% 76% at 24% 6%,
+      rgb(0 0 0 / 82%) 0%,
+      rgb(0 0 0 / 28%) 56%,
+      transparent 95%
+    );
+
+    @variant light {
+      background-image:
+        linear-gradient(
+          to right,
+          color-mix(in oklab, var(--border) 48%, transparent) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          to bottom,
+          color-mix(in oklab, var(--border) 48%, transparent) 1px,
+          transparent 1px
+        ),
+        radial-gradient(
+          circle at 1px 1px,
+          color-mix(in oklab, var(--foreground) 3%, transparent) 1px,
+          transparent 0
+        );
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sovereign-atmosphere-layer {
+      transition: none;
+    }
+  }
 }

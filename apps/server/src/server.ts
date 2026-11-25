@@ -134,6 +134,8 @@ import * as CodexInstallation from "./provider/CodexInstallation.ts";
 import * as ProviderInstallationGate from "./provider/ProviderInstallationGate.ts";
 import * as ProviderInstanceRegistry from "./provider/ProviderInstanceRegistry.ts";
 import * as ProviderAdapterRegistry from "./orchestration-v2/ProviderAdapterRegistry.ts";
+import * as ProviderAvailabilityLedger from "./provider/ProviderAvailabilityLedger.ts";
+import * as ProviderPoolRouter from "./provider/ProviderPoolRouter.ts";
 import * as ProviderRegistry from "./provider/ProviderRegistry.ts";
 import * as ProviderUsageLimitsIngestion from "./provider/ProviderUsageLimitsIngestion.ts";
 import * as UsageLimitSources from "./usage/UsageLimitSources.ts";
@@ -255,6 +257,8 @@ import {
   readTailscaleStatus,
 } from "@t3tools/tailscale";
 import * as ServerActivation from "./serverActivation.ts";
+import * as SovereignHttpRoutes from "./sovereign/SovereignHttpRoutes.ts";
+import * as SovereignRuntimeLayer from "./sovereign/SovereignRuntimeLayer.ts";
 
 // Escaped MCP handoff provenance can exceed find-my-way's 100-character segment default.
 const HTTP_ROUTER_CONFIG = {
@@ -790,7 +794,12 @@ const layerRuntimeCoreDependenciesBase = Layer.mergeAll(
   Layer.provideMerge(SecretCheck.layer),
   Layer.provideMerge(SecretResolver.layer),
   // Above the settings it writes when a theme is applied.
-  Layer.provideMerge(EnvironmentTheme.layer),
+  Layer.provideMerge(
+    Layer.merge(
+      EnvironmentTheme.layer,
+      ProviderPoolRouter.layer.pipe(Layer.provideMerge(ProviderAvailabilityLedger.layer)),
+    ),
+  ),
   Layer.provideMerge(layerServerSettings),
   Layer.provideMerge(layerSourceControlProviderRegistry),
   Layer.provideMerge(layerGit),
@@ -919,6 +928,7 @@ const layerMakeRoutes = Layer.mergeAll(
     PreviewTunnel.routeLayer,
     ServerHttp.layerStaticAndDevRoute,
     Ws.layer,
+    SovereignHttpRoutes.layer,
     speechStreamRouteLayer,
   ),
   McpHttpServer.layer.pipe(
@@ -930,6 +940,7 @@ const layerMakeRoutes = Layer.mergeAll(
   Layer.effectDiscard(
     RemoteDelegation.RemoteDelegation.pipe(Effect.flatMap((remote) => remote.start())),
   ),
+  SovereignRuntimeLayer.layerStartupRecovery,
 ).pipe(
   Layer.provide(
     PullRequestReviewGuideService.layer.pipe(Layer.provide(PullRequestReviewGuides.layer)),
@@ -963,6 +974,7 @@ const layerMakeRoutes = Layer.mergeAll(
     ),
   ),
   Layer.provide(CloudSpeech.layer.pipe(Layer.provide(SecretResolver.layer))),
+  Layer.provide(SovereignRuntimeLayer.layer),
   Layer.provide(layerServerSettings),
   Layer.provide(PreviewAutomationBroker.layer),
   Layer.provide(ServerSelfUpdate.layer.pipe(Layer.provide(layerDesktopAppUpdate))),

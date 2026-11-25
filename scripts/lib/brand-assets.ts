@@ -1,8 +1,12 @@
 export const BRAND_ASSET_PATHS = {
+  developmentIconSvg: "assets/dev/icon.svg",
+  developmentMacIconSvg: "assets/dev/icon-macos.svg",
   developmentIconComposerProject: "assets/dev/app-icon.icon",
   developmentIosIconPng: "assets/dev/blueprint-ios-1024.png",
   developmentUniversalIconPng: "assets/dev/blueprint-universal-1024.png",
 
+  productionIconSvg: "assets/prod/icon.svg",
+  productionMacIconSvg: "assets/prod/icon-macos.svg",
   productionIconComposerProject: "assets/prod/app-icon.icon",
   productionIosIconPng: "assets/prod/black-ios-1024.png",
   productionMacIconPng: "assets/prod/black-macos-1024.png",
@@ -15,6 +19,8 @@ export const BRAND_ASSET_PATHS = {
   productionWebIcon192Png: "assets/prod/t3-black-web-icon-192x192.png",
   productionWebIcon512Png: "assets/prod/t3-black-web-icon-512x512.png",
 
+  nightlyIconSvg: "assets/nightly/icon.svg",
+  nightlyMacIconSvg: "assets/nightly/icon-macos.svg",
   nightlyIconComposerProject: "assets/nightly/app-icon.icon",
   nightlyIosIconPng: "assets/nightly/nightly-ios-1024.png",
   nightlyMacIconPng: "assets/nightly/nightly-macos-1024.png",

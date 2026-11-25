@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/vitest";
+import * as EffectAcpErrors from "effect-acp/errors";
 
-import { fxSubagentOutcome } from "./adapter.ts";
+import { fxPromptFailure, fxSubagentOutcome } from "./adapter.ts";
 
 describe("fx subagent replies", () => {
   it.each(["", "1", "12", "123"])("preserves literal Unicode spelling ending in u%s", (digits) => {
@@ -40,5 +41,33 @@ describe("fx subagent replies", () => {
     ['{"ok":true,"result":"\\q', { ok: true, result: null }],
   ])("retains existing normalization for %s", (text, expected) => {
     expect(fxSubagentOutcome(text)).toEqual(expected);
+  });
+});
+
+describe("fxPromptFailure", () => {
+  const nowMs = Date.parse("2026-10-20T10:00:00.000Z");
+
+  it("classifies backend 429 and rate-limit failures as usage_limit with parsed resetAt", () => {
+    const failure = fxPromptFailure(
+      new EffectAcpErrors.AcpRequestError({
+        code: -32603,
+        errorMessage: "API Error 429: Rate limit reached. Resets at 2026-10-20T11:00:00.000Z",
+      }),
+      nowMs,
+    );
+    expect(failure.class).toBe("usage_limit");
+    expect(failure.resetAt).toBe("2026-10-20T11:00:00.000Z");
+  });
+
+  it("keeps ordinary backend errors as provider_error", () => {
+    const failure = fxPromptFailure(
+      new EffectAcpErrors.AcpRequestError({
+        code: -32603,
+        errorMessage: "Backend authentication failed",
+      }),
+      nowMs,
+    );
+    expect(failure.class).toBe("provider_error");
+    expect(failure.resetAt).toBeUndefined();
   });
 });

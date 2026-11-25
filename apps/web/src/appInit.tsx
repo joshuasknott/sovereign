@@ -97,6 +97,9 @@ function startClientAppearance(): void {
     if (previous?.appearanceContrast !== settings.appearanceContrast) {
       applyAppearanceContrast(root, settings.appearanceContrast);
     }
+    if (previous?.sovereignAtmosphere !== settings.sovereignAtmosphere) {
+      root.dataset.sovereignAtmosphere = settings.sovereignAtmosphere;
+    }
     if (previous?.glassOpacity !== settings.glassOpacity) {
       root.style.setProperty("--glass-opacity", `${settings.glassOpacity}%`);
       if (settings.glassOpacity === 100) {

@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BrandMark } from "../../components/BrandMark";
 import { AppText as Text } from "../../components/ui/AppText";
 import { SymbolView } from "../../components/ui/AppSymbol";
 import { useDeadlinePassed } from "../../lib/clock";
@@ -35,6 +36,15 @@ export function SettingsAboutRouteScreen() {
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 18) + 18 }}
       >
         <AppSettingsSection />
+        <View className="gap-3 rounded-[24px] border-continuous bg-grouped-card p-5">
+          <BrandMark compact />
+          <Text className="text-sm leading-normal text-foreground-muted">
+            <T>
+              Sovereign is an independent open-source project built upon T3 Code under the MIT
+              License. It is not affiliated with, endorsed by, or maintained by T3 Tools, Inc.
+            </T>
+          </Text>
+        </View>
       </ScrollView>
     </SettingsScreen>
   );

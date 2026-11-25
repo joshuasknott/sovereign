@@ -1,12 +1,12 @@
 {
   "id": "/",
-  "name": "T3 Code",
-  "short_name": "T3 Code",
+  "name": "Sovereign",
+  "short_name": "Sovereign",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#161616",
-  "theme_color": "#161616",
+  "background_color": "#090a0d",
+  "theme_color": "#090a0d",
   "icons": [
     {
       "src": "/favicon-32x32.png",
